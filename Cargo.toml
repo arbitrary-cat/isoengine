@@ -1,0 +1,14 @@
+[package]
+
+name = "isoengine"
+version = "0.0.1"
+authors = ["Sam Payson <scpayson@gmail.com>"]
+
+[dependencies.sdl2]
+git = "https://github.com/AngryLawyer/rust-sdl2.git"
+
+[dependencies.png]
+git = "https://github.com/servo/rust-png.git"
+
+[dependencies.gl]
+git = "https://github.com/bjz/gl-rs.git"
