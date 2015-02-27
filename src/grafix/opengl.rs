@@ -169,10 +169,16 @@ impl Tex2D {
     }
 }
 
-#[allow(missing_docs)]
-pub enum ShaderError {
-    CompileError(String),
-    LinkError(String),
+/// An error that occurred while compiling a shader.
+pub struct CompileError {
+    /// The info log retrieved from OpenGL, which may describe the cause of the error.
+    pub info_log: String
+}
+
+/// An error that occurred while linking a shader program.
+pub struct LinkError {
+    /// The info log retrieved from OpenGL, which may describe the cause of the error.
+    pub info_log: String
 }
 
 /// A compiled OpenGL shader object. Its only purpose is to be linked with other `Shader`s into a
@@ -181,22 +187,22 @@ pub struct Shader(GLuint);
 
 impl Shader {
     /// Create a new vertex shader from a source string.
-    pub fn new_vertex(src: &str) -> Result<Shader, ShaderError> {
+    pub fn new_vertex(src: &str) -> Result<Shader, CompileError> {
         Shader::new(src, gl::VERTEX_SHADER)
     }
 
     /// Create a new geometry shader from a source string.
-    pub fn new_geometry(src: &str) -> Result<Shader, ShaderError> {
+    pub fn new_geometry(src: &str) -> Result<Shader, CompileError> {
         Shader::new(src, gl::GEOMETRY_SHADER)
     }
 
     /// Create a new fragment shader from a source string.
-    pub fn new_fragment(src: &str) -> Result<Shader, ShaderError> {
+    pub fn new_fragment(src: &str) -> Result<Shader, CompileError> {
         Shader::new(src, gl::FRAGMENT_SHADER)
     }
 
     // Hooray for FFI and boilerplate!
-    fn new(src: &str, typ: GLenum) -> Result<Shader, ShaderError> {
+    fn new(src: &str, typ: GLenum) -> Result<Shader, CompileError> {
         unsafe {
             let gl_shader = trace!(gl::CreateShader(typ));
 
@@ -226,7 +232,7 @@ impl Shader {
                 let log = String::from_utf8(log_buf)
                     .unwrap_or(String::from_str("Info log was not valid utf-8"));
 
-                Err(ShaderError::CompileError(log))
+                Err(CompileError{info_log: log})
             } else {
                 Ok(Shader(gl_shader))
             }
@@ -239,7 +245,7 @@ pub struct ShaderProgram(GLuint);
 
 impl ShaderProgram {
     /// Link several `Shader`s into a `ShaderProgram`.
-    pub fn from_shaders<I>(shaders: I) -> Result<ShaderProgram, ShaderError>
+    pub fn from_shaders<I>(shaders: I) -> Result<ShaderProgram, LinkError>
         where I: Iterator<Item = Shader> {
 
         let gl_prog = unsafe { trace!(gl::CreateProgram()) };
@@ -270,7 +276,7 @@ impl ShaderProgram {
                 let log = String::from_utf8(log_buf)
                     .unwrap_or(String::from_str("Info log was not valid utf-8"));
 
-                Err(ShaderError::LinkError(log))
+                Err(LinkError{info_log: log})
             } else {
                 Ok(ShaderProgram(gl_prog))
             }
