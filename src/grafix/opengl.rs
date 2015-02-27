@@ -300,3 +300,50 @@ impl VertexArray {
         unsafe { trace!(gl::BindVertexArray(self.0)) }
     }
 }
+
+/// Simplified, safer interface to OpenGL's Vertex Buffer Objects.
+pub struct VertexBuffer(GLuint);
+
+impl VertexBuffer {
+    /// Generate a new `VertexBuffer`.
+    pub fn new() -> VertexBuffer {
+        let mut gl_vbo = 0;
+        unsafe { trace!(gl::GenBuffers(1, &mut gl_vbo)) }
+
+        VertexBuffer(gl_vbo)
+    }
+
+    /// Make this the active Vertex Buffer. This amounts to calling `glBindBuffer` with the
+    /// `ARRAY_BUFFER` target constant.
+    pub fn bind(&self) {
+        unsafe { trace!(gl::BindBuffer(gl::ARRAY_BUFFER, self.0)) }
+    }
+
+    /// Load data into the buffer that will be written only once. This calls `glBufferData` with the
+    /// `STATIC_DRAW` usage constant.
+    pub fn buffer_static<T>(&self, data: &[T]) {
+        unsafe {
+            trace!(gl::BindBuffer(gl::ARRAY_BUFFER, self.0));
+            trace!(gl::BufferData(
+                gl::ARRAY_BUFFER,
+                (mem::size_of::<T>() * data.len()) as GLsizeiptr,
+                data.as_ptr() as *const GLvoid,
+                gl::STATIC_DRAW,
+            ));
+        }
+    }
+
+    /// Load data into the buffer that will be written very frequently. This calls `glBufferData`
+    /// with the `STREAM_DRAW` usage constant.
+    pub fn buffer_stream<T>(&self, data: &[T]) {
+        unsafe {
+            trace!(gl::BindBuffer(gl::ARRAY_BUFFER, self.0));
+            trace!(gl::BufferData(
+                gl::ARRAY_BUFFER,
+                (mem::size_of::<T>() * data.len()) as GLsizeiptr,
+                data.as_ptr() as *const GLvoid,
+                gl::STREAM_DRAW,
+            ));
+        }
+    }
+}
