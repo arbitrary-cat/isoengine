@@ -56,6 +56,10 @@ unsafe fn error_suffix() -> &'static str {
 
 /// A RAII container for a window and its OpenGL context. This object needs to be around for as long
 /// as OpenGL is being used with that window.
+///
+/// In general the user shouldn't touch this and should instead use grafix::Context, which takes
+/// care of some SDL preliminaries. Maybe I'll jump through the necessary hoops to make this
+/// not-public at some point.
 #[allow(dead_code)] // The code isn't really dead, we're relying on drop being called.
 pub struct Context {
     window: video::Window,

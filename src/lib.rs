@@ -27,3 +27,23 @@ extern crate sdl2;
 
 /// High-level graphics abstractions built on top of OpenGL.
 pub mod grafix;
+
+/// A RAII handle for the whole engine. Once this baby leaves scope, it's curtains.
+///
+/// ...I'm tired, okay?
+#[allow(dead_code)]
+pub struct Context {
+    gfx: grafix::opengl::Context,
+    sdl: sdl2::Sdl,
+}
+
+impl Context {
+    /// Create a new isoengine context. This will create a window and an OpenGL context, as well as
+    /// initialize all SDL subsystems.
+    pub fn new(title: &str, x_res: i32, y_res: i32) -> Result<Context, String> {
+        let sdl =  try!(sdl2::init(sdl2::INIT_EVERYTHING));
+        let gfx = try!(grafix::opengl::Context::new(title, x_res, y_res));
+
+        Ok(Context { sdl: sdl, gfx: gfx })
+    }
+}
