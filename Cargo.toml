@@ -4,6 +4,10 @@ name = "isoengine"
 version = "0.0.1"
 authors = ["Sam Payson <scpayson@gmail.com>"]
 
+[features]
+
+trace_gl = []
+
 [dependencies.sdl2]
 git = "https://github.com/AngryLawyer/rust-sdl2.git"
 

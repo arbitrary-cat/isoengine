@@ -31,7 +31,7 @@ use sdl2::video;
 // Enabling `trace_gl` will slow down code a lot, but provide a detailed view of what's going on in
 // the GL.
 macro_rules! trace {
-    ($call:expr) => (if cfg!(trace_gl) {
+    ($call:expr) => (if cfg!(feature = "trace_gl") {
         let __result = $call;
         println!("{}{}", stringify!($call), error_suffix());
         __result
