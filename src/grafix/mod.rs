@@ -15,4 +15,5 @@
 // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+/// Boilerplate-reducing abstractions around OpenGL, taylored to the specific use-case of isoengine.
 pub mod opengl;
