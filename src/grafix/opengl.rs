@@ -287,6 +287,22 @@ impl ShaderProgram {
     pub fn use_program(&self) {
         unsafe { trace!(gl::UseProgram(self.0)) }
     }
+
+    /// Get a `VertexAttrib` corresponding to one of the active vertex attributes in this
+    /// `ShaderProgram`..
+    pub fn get_attrib(&self, name: &str) -> Result<VertexAttrib, NoSuchActiveAttrib> {
+        let attrib = unsafe {
+            let cname = ffi::CString::new(name).unwrap();
+
+            gl::GetAttribLocation(self.0, cname.as_ptr() as *const GLchar)
+        };
+
+        if attrib == -1 {
+            Err(NoSuchActiveAttrib)
+        } else {
+            Ok(VertexAttrib(attrib as GLuint))
+        }
+    }
 }
 
 /// Simplified interface to OpenGL's Vertex Array Objects.
@@ -349,6 +365,29 @@ impl VertexBuffer {
                 (mem::size_of::<T>() * data.len()) as GLsizeiptr,
                 data.as_ptr() as *const GLvoid,
                 gl::STREAM_DRAW,
+            ));
+        }
+    }
+}
+
+/// Error returned to indicate that the requested attribute does not exist (or that the user has
+/// requested the location of a built-in attributed beginning with `gl_`).
+pub struct NoSuchActiveAttrib;
+
+/// Simplified interface to an OpenGL Vertex Attribute.
+pub struct VertexAttrib(GLuint);
+
+impl VertexAttrib {
+    /// A somewhat rustier interface to `glVertexAttribPointer`. It's still a mess, though.
+    pub fn set_pointer<T>(&self, size: usize, typ: GLenum, norm: bool, stride: usize, off: usize) {
+        unsafe {
+            trace!(gl::VertexAttribPointer(
+                self.0,
+                size as GLint,
+                typ,
+                match norm { true => gl::TRUE, false => gl::FALSE },
+                stride as GLsizei,
+                mem::transmute(off)
             ));
         }
     }
