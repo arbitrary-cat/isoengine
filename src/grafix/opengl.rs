@@ -25,6 +25,35 @@ use gl;
 use png;
 use sdl2::video;
 
+// If `trace_gl` is enabled, this macro will print the expression passed to it (assumed to be a call
+// to an OpenGL function), and then call `glGetError` and print any error it finds.
+//
+// Enabling `trace_gl` will slow down code a lot, but provide a detailed view of what's going on in
+// the GL.
+macro_rules! trace {
+    ($call:expr) => (if cfg!(trace_gl) {
+        let __result = $call;
+        println!("{}{}", stringify!($call), error_suffix());
+        __result
+    } else {
+        $call
+    })
+}
+
+// This function calls glGetError and returns a suffix string describing any error found. It is
+// intended 100% for debug purposes, and should only be called from the trace!(..) macro.
+unsafe fn error_suffix() -> &'static str {
+    match gl::GetError() {
+        gl::NO_ERROR                      => "",
+        gl::INVALID_ENUM                  => " : GL_INVALID_ENUM",
+        gl::INVALID_VALUE                 => " : GL_INVALID_VALUE",
+        gl::INVALID_OPERATION             => " : GL_INVALID_OPERATION",
+        gl::INVALID_FRAMEBUFFER_OPERATION => " : GL_INVALID_FRAMEBUFFER_OPERATION",
+        gl::OUT_OF_MEMORY                 => " : GL_OUT_OF_MEMORY",
+        _                                 => " : unrecognized error",
+    }
+}
+
 /// A RAII container for a window and its OpenGL context. This object needs to be around for as long
 /// as OpenGL is being used with that window.
 #[allow(dead_code)] // The code isn't really dead, we're relying on drop being called.
@@ -45,46 +74,18 @@ impl Context {
         gl::load_with(|s| unsafe { mem::transmute(video::gl_get_proc_address(s)) });
 
         unsafe {
-            gl::Enable(gl::DEPTH_TEST);
-            gl::DepthFunc(gl::LEQUAL);
-            gl::ClearDepth(1.0);
+            trace!(gl::Enable(gl::DEPTH_TEST));
+            trace!(gl::DepthFunc(gl::LEQUAL));
+            trace!(gl::ClearDepth(1.0));
 
-            gl::Enable(gl::BLEND);
-            gl::BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA);
+            trace!(gl::Enable(gl::BLEND));
+            trace!(gl::BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA));
         }
 
         Ok(Context{ window: window, gl_ctx: gl_ctx })
     }
 }
 
-// This function calls glGetError and returns a suffix string describing any error found. It is
-// intended 100% for debug purposes, and should only be called from the trace!(..) macro.
-unsafe fn error_suffix() -> &'static str {
-    match gl::GetError() {
-        gl::NO_ERROR                      => "",
-        gl::INVALID_ENUM                  => " : GL_INVALID_ENUM",
-        gl::INVALID_VALUE                 => " : GL_INVALID_VALUE",
-        gl::INVALID_OPERATION             => " : GL_INVALID_OPERATION",
-        gl::INVALID_FRAMEBUFFER_OPERATION => " : GL_INVALID_FRAMEBUFFER_OPERATION",
-        gl::OUT_OF_MEMORY                 => " : GL_OUT_OF_MEMORY",
-        _                                 => " : unrecognized error",
-    }
-}
-
-// If `trace_gl` is enabled, this macro will print the expression passed to it (assumed to be a call
-// to an OpenGL function), and then call `glGetError` and print any error it finds.
-//
-// Enabling `trace_gl` will slow down code a lot, but provide a detailed view of what's going on in
-// the GL.
-macro_rules! trace {
-    ($call:expr) => (if cfg!(trace_gl) {
-        let __result = $call;
-        println!("{}{}", stringify!($call), error_suffix());
-        __result
-    } else {
-        $call
-    })
-}
 /// A 2D OpenGL Texture
 pub struct Tex2D(GLuint);
 
@@ -278,7 +279,7 @@ impl ShaderProgram {
 
     /// Simple wrapper for `glUseProgram`.
     pub fn use_program(&self) {
-        unsafe { gl::UseProgram(self.0) }
+        unsafe { trace!(gl::UseProgram(self.0)) }
     }
 }
 
