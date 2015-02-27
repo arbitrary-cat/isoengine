@@ -33,6 +33,10 @@ unsafe fn error_suffix() -> &'static str {
     }
 }
 
+// If `trace_gl` is enabled, this macro will print the expression passed to it (assumed to be a call
+// to an OpenGL function), and then call `glGetError` and print any error it finds.
+//
+// This will slow down code a lot, but provide a detailed view of what's going on in the GL.
 macro_rules! trace {
     ($call:expr) => (if cfg!(trace_gl) {
         let __result = $call;
@@ -46,6 +50,11 @@ macro_rules! trace {
 pub struct Tex2D(GLuint);
 
 impl Tex2D {
+    /// Create a `Tex2D` from a PNG.
+    ///
+    /// # Panics
+    ///
+    /// This function will panic if `img` is not either BW (`K8`), RGB (`RGB8`), or RGBA (`RGBA8`).
     pub fn from_png(img: &png::Image) -> Tex2D {
         use png::PixelsByColorType::*;
 
@@ -110,6 +119,8 @@ impl Tex2D {
         Tex2D(gl_texid)
     }
 
+    /// Bind this texture to `GL_TEXTURE_2D` for the given texture unit. This function results in a
+    /// single call to `glActiveTexture` followed by a single call to `glBindTexture`.
     pub fn bind_to_unit(&self, unit: usize) {
         unsafe {
             trace!(gl::ActiveTexture(gl::TEXTURE0 + (unit as GLenum)));
