@@ -18,6 +18,7 @@
 use std::ffi;
 use std::iter;
 use std::ptr;
+use std::mem;
 
 use gl::types::*;
 use gl;
@@ -41,6 +42,17 @@ impl Context {
         let window = try!(Window::new(title, PosCentered, PosCentered, x_res, y_res, OPENGL));
         let gl_ctx = try!(window.gl_create_context());
 
+        gl::load_with(|s| unsafe { mem::transmute(video::gl_get_proc_address(s)) });
+
+        unsafe {
+            gl::Enable(gl::DEPTH_TEST);
+            gl::DepthFunc(gl::LEQUAL);
+            gl::ClearDepth(1.0);
+
+            gl::Enable(gl::BLEND);
+            gl::BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA);
+        }
+
         Ok(Context{ window: window, gl_ctx: gl_ctx })
     }
 }
@@ -55,7 +67,7 @@ unsafe fn error_suffix() -> &'static str {
         gl::INVALID_OPERATION             => " : GL_INVALID_OPERATION",
         gl::INVALID_FRAMEBUFFER_OPERATION => " : GL_INVALID_FRAMEBUFFER_OPERATION",
         gl::OUT_OF_MEMORY                 => " : GL_OUT_OF_MEMORY",
-        _                                 => " : unknown error",
+        _                                 => " : unrecognized error",
     }
 }
 
