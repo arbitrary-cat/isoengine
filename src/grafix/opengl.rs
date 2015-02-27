@@ -22,6 +22,28 @@ use std::ptr;
 use gl::types::*;
 use gl;
 use png;
+use sdl2::video;
+
+/// A RAII container for a window and its OpenGL context. This object needs to be around for as long
+/// as OpenGL is being used with that window.
+#[allow(dead_code)] // The code isn't really dead, we're relying on drop being called.
+pub struct Context {
+    window: video::Window,
+    gl_ctx: video::GLContext,
+}
+
+impl Context {
+    /// Create a new window with an associated (thread-local) OpenGL context.
+    pub fn new(title: &str, x_res: i32, y_res: i32) -> Result<Context, String> {
+        use sdl2::video::{Window, OPENGL};
+        use sdl2::video::WindowPos::*;
+
+        let window = try!(Window::new(title, PosCentered, PosCentered, x_res, y_res, OPENGL));
+        let gl_ctx = try!(window.gl_create_context());
+
+        Ok(Context{ window: window, gl_ctx: gl_ctx })
+    }
+}
 
 // This function calls glGetError and returns a suffix string describing any error found. It is
 // intended 100% for debug purposes, and should only be called from the trace!(..) macro.

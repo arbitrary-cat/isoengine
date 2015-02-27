@@ -23,6 +23,7 @@
 
 extern crate gl;
 extern crate png;
+extern crate sdl2;
 
 /// High-level graphics abstractions built on top of OpenGL.
 pub mod grafix;
