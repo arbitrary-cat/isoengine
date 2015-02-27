@@ -281,3 +281,21 @@ impl ShaderProgram {
         unsafe { gl::UseProgram(self.0) }
     }
 }
+
+/// Simplified interface to OpenGL's Vertex Array Objects.
+pub struct VertexArray(GLuint);
+
+impl VertexArray {
+    /// Generate a new `VertexArray`
+    pub fn new() -> VertexArray {
+        let mut gl_vao = 0;
+        unsafe { trace!(gl::GenVertexArrays(1, &mut gl_vao)) }
+
+        VertexArray(gl_vao)
+    }
+
+    /// Call `glBindVertexArray` on this `VertexArray`.
+    pub fn bind(&self) {
+        unsafe { trace!(gl::BindVertexArray(self.0)) }
+    }
+}
