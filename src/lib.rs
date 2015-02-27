@@ -19,7 +19,10 @@
 
 #![warn(missing_docs)]
 
+//! A Free and Open Source 2D isometric game engine.
+
 extern crate gl;
 extern crate png;
 
+/// High-level graphics abstractions built on top of OpenGL.
 pub mod grafix;
