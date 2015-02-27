@@ -16,5 +16,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 extern crate gl;
+extern crate png;
 
-mod grafix;
+pub mod grafix;

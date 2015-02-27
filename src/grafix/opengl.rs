@@ -17,8 +17,10 @@
 
 use gl::types::*;
 use gl;
+use png;
 
-// This function calls glGetError and returns a string describing any error found.
+// This function calls glGetError and returns a suffix string describing any error found. It is
+// intended 100% for debug purposes, and should only be called from the trace!(..) macro.
 unsafe fn error_suffix() -> &'static str {
     match gl::GetError() {
         gl::NO_ERROR                      => "",
@@ -31,25 +33,87 @@ unsafe fn error_suffix() -> &'static str {
     }
 }
 
-macro_rules! __expr {
-    ($e:expr) => $e
-}
-
-macro_rules! gl_trace {
+macro_rules! trace {
     ($call:expr) => (if cfg!(trace_gl) {
         let __result = $call;
         println!("{}{}", stringify!($call), error_suffix());
         __result
+    } else {
+        $call
     })
 }
-
+/// A 2D OpenGL Texture
 pub struct Tex2D(GLuint);
 
 impl Tex2D {
-    pub fn new() -> Tex2D {
+    pub fn from_png(img: &png::Image) -> Tex2D {
+        use png::PixelsByColorType::*;
+
         let mut gl_texid = 0;
-        println!("glGenTextures(1, <ptr>)");
-        unsafe { gl_trace!(gl::GenTextures(1, &mut gl_texid)); }
+        unsafe {
+            trace!(gl::GenTextures(1, &mut gl_texid));
+            trace!(gl::BindTexture(gl::TEXTURE_2D, gl_texid));
+            trace!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::CLAMP_TO_BORDER as GLint));
+            trace!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::CLAMP_TO_BORDER as GLint));
+            trace!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::NEAREST as GLint));
+            trace!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::NEAREST as GLint));
+        }
+
+        match img.pixels {
+
+            RGBA8(ref pix) => unsafe {
+                trace!(gl::TexImage2D(
+                    gl::TEXTURE_2D,
+                    0,
+                    gl::RGBA as GLint,
+                    img.width  as GLsizei,
+                    img.height as GLsizei,
+                    0,
+                    gl::RGBA,
+                    gl::UNSIGNED_BYTE,
+                    pix.as_ptr() as *const GLvoid,
+                ));
+            },
+
+            RGB8(ref pix) => unsafe {
+                trace!(gl::TexImage2D(
+                    gl::TEXTURE_2D,
+                    0,
+                    gl::RGB as GLint,
+                    img.width  as GLsizei,
+                    img.height as GLsizei,
+                    0,
+                    gl::RGB,
+                    gl::UNSIGNED_BYTE,
+                    pix.as_ptr() as *const GLvoid,
+                ));
+            },
+
+            K8(ref pix) => unsafe {
+                trace!(gl::TexImage2D(
+                    gl::TEXTURE_2D,
+                    0,
+                    gl::RED as GLint,
+                    img.width  as GLsizei,
+                    img.height as GLsizei,
+                    0,
+                    gl::RED,
+                    gl::UNSIGNED_BYTE,
+                    pix.as_ptr() as *const GLvoid,
+                ));
+            },
+
+            _ => panic!("PNGs must be either BW, RGB or RGBA!"),
+
+        }
+
         Tex2D(gl_texid)
+    }
+
+    pub fn bind_to_unit(&self, unit: usize) {
+        unsafe {
+            trace!(gl::ActiveTexture(gl::TEXTURE0 + (unit as GLenum)));
+            trace!(gl::BindTexture(gl::TEXTURE_2D, self.0));
+        }
     }
 }
