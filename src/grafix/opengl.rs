@@ -15,6 +15,10 @@
 // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+use std::ffi;
+use std::iter;
+use std::ptr;
+
 use gl::types::*;
 use gl;
 use png;
@@ -126,5 +130,119 @@ impl Tex2D {
             trace!(gl::ActiveTexture(gl::TEXTURE0 + (unit as GLenum)));
             trace!(gl::BindTexture(gl::TEXTURE_2D, self.0));
         }
+    }
+}
+
+#[allow(missing_docs)]
+pub enum ShaderError {
+    CompileError(String),
+    LinkError(String),
+}
+
+/// A compiled OpenGL shader object. Its only purpose is to be linked with other `Shader`s into a
+/// `ShaderProgram`.
+pub struct Shader(GLuint);
+
+impl Shader {
+    /// Create a new vertex shader from a source string.
+    pub fn new_vertex(src: &str) -> Result<Shader, ShaderError> {
+        Shader::new(src, gl::VERTEX_SHADER)
+    }
+
+    /// Create a new geometry shader from a source string.
+    pub fn new_geometry(src: &str) -> Result<Shader, ShaderError> {
+        Shader::new(src, gl::GEOMETRY_SHADER)
+    }
+
+    /// Create a new fragment shader from a source string.
+    pub fn new_fragment(src: &str) -> Result<Shader, ShaderError> {
+        Shader::new(src, gl::FRAGMENT_SHADER)
+    }
+
+    // Hooray for FFI and boilerplate!
+    fn new(src: &str, typ: GLenum) -> Result<Shader, ShaderError> {
+        unsafe {
+            let gl_shader = trace!(gl::CreateShader(typ));
+
+            // Jump through hoops to create a `const GLchar **` for glShaderSource.
+            let src_cstr    = ffi::CString::new(src).unwrap();
+            let src_ptr_ptr = &src_cstr.as_ptr() as *const *const GLchar;
+
+            trace!(gl::ShaderSource(gl_shader, 1, src_ptr_ptr, ptr::null()));
+            trace!(gl::CompileShader(gl_shader));
+
+            // Check if the shader compile successfully
+            let mut status: GLint = 0;
+            trace!(gl::GetShaderiv(gl_shader, gl::COMPILE_STATUS, &mut status));
+
+            // If the shader failed to compile, get the info log and return it as an error.
+            if status != (gl::TRUE as GLint) {
+                let mut log_len = 0;
+                trace!(gl::GetShaderiv(gl_shader, gl::INFO_LOG_LENGTH, &mut log_len));
+                let mut log_buf: Vec<u8> = iter::repeat(0u8).take(log_len as usize).collect();
+                let log_ptr = log_buf.as_mut_ptr() as *mut GLchar;
+
+                let mut real_len = 0;
+                trace!(gl::GetShaderInfoLog(gl_shader, log_len as GLsizei, &mut real_len, log_ptr));
+                // real_len doesn't include the null terminator.
+                log_buf.truncate(real_len as usize);
+
+                let log = String::from_utf8(log_buf)
+                    .unwrap_or(String::from_str("Info log was not valid utf-8"));
+
+                Err(ShaderError::CompileError(log))
+            } else {
+                Ok(Shader(gl_shader))
+            }
+        }
+    }
+}
+
+/// A linked OpenGL shader program object.
+pub struct ShaderProgram(GLuint);
+
+impl ShaderProgram {
+    /// Link several `Shader`s into a `ShaderProgram`.
+    pub fn from_shaders<I>(shaders: I) -> Result<ShaderProgram, ShaderError>
+        where I: Iterator<Item = Shader> {
+
+        let gl_prog = unsafe { trace!(gl::CreateProgram()) };
+
+        for s in shaders {
+            unsafe { trace!(gl::AttachShader(gl_prog, s.0)) };
+        }
+
+        unsafe {
+            trace!(gl::LinkProgram(gl_prog));
+
+            // Check if the program linked successfully.
+            let mut status: GLint = 0;
+            trace!(gl::GetProgramiv(gl_prog, gl::LINK_STATUS, &mut status));
+
+            // If the program failed to link, get the info log and return it as an error.
+            if status != (gl::TRUE as GLint) {
+                let mut log_len = 0;
+                trace!(gl::GetProgramiv(gl_prog, gl::INFO_LOG_LENGTH, &mut log_len));
+                let mut log_buf: Vec<u8> = iter::repeat(0u8).take(log_len as usize).collect();
+                let log_ptr = log_buf.as_mut_ptr() as *mut GLchar;
+
+                let mut real_len = 0;
+                trace!(gl::GetProgramInfoLog(gl_prog, log_len as GLsizei, &mut real_len, log_ptr));
+                // real_len doesn't include the null terminator.
+                log_buf.truncate(real_len as usize);
+
+                let log = String::from_utf8(log_buf)
+                    .unwrap_or(String::from_str("Info log was not valid utf-8"));
+
+                Err(ShaderError::LinkError(log))
+            } else {
+                Ok(ShaderProgram(gl_prog))
+            }
+        }
+    }
+
+    /// Simple wrapper for `glUseProgram`.
+    pub fn use_program(&self) {
+        unsafe { gl::UseProgram(self.0) }
     }
 }
