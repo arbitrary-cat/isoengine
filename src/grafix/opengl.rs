@@ -62,7 +62,8 @@ unsafe fn error_suffix() -> &'static str {
 // If `trace_gl` is enabled, this macro will print the expression passed to it (assumed to be a call
 // to an OpenGL function), and then call `glGetError` and print any error it finds.
 //
-// This will slow down code a lot, but provide a detailed view of what's going on in the GL.
+// Enabling `trace_gl` will slow down code a lot, but provide a detailed view of what's going on in
+// the GL.
 macro_rules! trace {
     ($call:expr) => (if cfg!(trace_gl) {
         let __result = $call;
