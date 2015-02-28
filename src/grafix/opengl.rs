@@ -386,7 +386,7 @@ pub struct VertexAttrib(GLuint);
 
 impl VertexAttrib {
     /// A somewhat rustier interface to `glVertexAttribPointer`. It's still a mess, though.
-    pub fn set_pointer<T>(&self, size: usize, typ: GLenum, norm: bool, stride: usize, off: usize) {
+    pub fn set_pointer(&self, size: usize, typ: GLenum, norm: bool, stride: usize, off: usize) {
         unsafe {
             trace!(gl::VertexAttribPointer(
                 self.0,
