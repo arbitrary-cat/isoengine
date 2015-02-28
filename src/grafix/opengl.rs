@@ -88,6 +88,10 @@ impl Context {
 
         Ok(Context{ window: window, gl_ctx: gl_ctx })
     }
+
+    pub fn draw_frame(&self) {
+        self.window.gl_swap_window();
+    }
 }
 
 /// A 2D OpenGL Texture

@@ -46,4 +46,8 @@ impl Context {
 
         Ok(Context { sdl: sdl, gfx: gfx })
     }
+
+    pub fn draw_frame(&self) {
+        self.gfx.draw_frame();
+    }
 }
