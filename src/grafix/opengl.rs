@@ -398,4 +398,9 @@ impl VertexAttrib {
             ));
         }
     }
+
+    /// Enable this vertex attribute.
+    pub fn enable(&self) {
+        unsafe { trace!(gl::EnableVertexAttribArray(self.0)) }
+    }
 }
