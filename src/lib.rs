@@ -47,6 +47,7 @@ impl Context {
         Ok(Context { sdl: sdl, gfx: gfx })
     }
 
+    /// Swap OpenGL buffers, drawing the frame to the screen.
     pub fn draw_frame(&self) {
         self.gfx.draw_frame();
     }

@@ -89,6 +89,7 @@ impl Context {
         Ok(Context{ window: window, gl_ctx: gl_ctx })
     }
 
+    /// Swap OpenGL buffers, drawing the frame to the screen.
     pub fn draw_frame(&self) {
         self.window.gl_swap_window();
     }
