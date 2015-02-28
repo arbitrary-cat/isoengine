@@ -174,12 +174,14 @@ impl Tex2D {
 }
 
 /// An error that occurred while compiling a shader.
+#[derive(Debug)]
 pub struct CompileError {
     /// The info log retrieved from OpenGL, which may describe the cause of the error.
     pub info_log: String
 }
 
 /// An error that occurred while linking a shader program.
+#[derive(Debug)]
 pub struct LinkError {
     /// The info log retrieved from OpenGL, which may describe the cause of the error.
     pub info_log: String
@@ -298,7 +300,7 @@ impl ShaderProgram {
         let attrib = unsafe {
             let cname = ffi::CString::new(name).unwrap();
 
-            gl::GetAttribLocation(self.0, cname.as_ptr() as *const GLchar)
+            trace!(gl::GetAttribLocation(self.0, cname.as_ptr() as *const GLchar))
         };
 
         if attrib == -1 {
@@ -376,6 +378,7 @@ impl VertexBuffer {
 
 /// Error returned to indicate that the requested attribute does not exist (or that the user has
 /// requested the location of a built-in attributed beginning with `gl_`).
+#[derive(Debug)]
 pub struct NoSuchActiveAttrib;
 
 /// Simplified interface to an OpenGL Vertex Attribute.
