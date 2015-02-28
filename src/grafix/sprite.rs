@@ -15,9 +15,32 @@
 // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+use std::old_path::{Path, BytesContainer};
+
+use png;
+
 use grafix::opengl;
 
-struct Sheet {
+/// A descriptor which explains the properties of a sprite sheet and where to find the textures.
+pub struct SheetDesc {
+    pub tex_width:  u32,
+    pub tex_height: u32,
+
+    pub spr_width:  u32,
+    pub spr_height: u32,
+
+    pub num_across: u32,
+    pub num_down:   u32,
+
+    pub color_path: String,
+    pub depth_path: String,
+}
+
+/// A sprite sheet.
+pub struct Sheet {
+    tex_width:  u32,
+    tex_height: u32,
+
     spr_width:  u32,
     spr_height: u32,
 
@@ -25,10 +48,30 @@ struct Sheet {
     num_down:   u32,
 
     // RGBA texture which gives the sprite its color.
-    color: opengl::Tex2D;
+    color: opengl::Tex2D,
 
     // Red texture which gives each pixels distance from the camera, at render time.
-    depth: opengl::Tex2D;
+    depth: opengl::Tex2D,
 }
 
+impl Sheet {
+    /// Load a Sprite from a descriptor. This turns the paths in the `Sheet
+    pub fn from_desc(desc: SheetDesc) -> Result<Sheet, String> {
+        let color_path = Path::new(desc.color_path);
+        let depth_path = Path::new(desc.depth_path);
 
+        Ok( Sheet {
+            tex_width:  desc.tex_width,
+            tex_height: desc.tex_height,
+
+            spr_width:  desc.spr_width,
+            spr_height: desc.spr_height,
+
+            num_across: desc.num_across,
+            num_down:   desc.num_down,
+
+            color: opengl::Tex2D::from_png(&try!(png::load_png(&color_path))),
+            depth: opengl::Tex2D::from_png(&try!(png::load_png(&depth_path))),
+        })
+    }
+}

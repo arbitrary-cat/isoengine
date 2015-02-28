@@ -17,3 +17,5 @@
 
 /// Boilerplate-reducing abstractions around OpenGL, taylored to the specific use-case of isoengine.
 pub mod opengl;
+
+pub mod sprite;
