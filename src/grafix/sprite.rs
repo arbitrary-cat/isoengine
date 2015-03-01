@@ -88,3 +88,22 @@ impl Sheet {
         })
     }
 }
+
+/// Struct which encapsulates the GL state needed to render sprites.
+pub struct Renderer {
+    prog: opengl::ShaderProgram,
+}
+
+impl Renderer {
+    /// Create a new `sprite::Renderer`. This compiles and links a shader program, so it should only
+    /// be called after OpenGL has been initialized.
+    pub fn new() -> Renderer {
+        let vtx = opengl::Shader::new_vertex(include_str!("shaders/sprite.vtx"));
+        let geo = opengl::Shader::new_vertex(include_str!("shaders/sprite.geo"));
+        let frg = opengl::Shader::new_vertex(include_str!("shaders/sprite.frg"));
+
+        let prog = opengl::ShaderProgram::from_shaders(vec![vtx, geo, frg].into_iter());
+
+        Renderer { prog: prog }
+    }
+}
