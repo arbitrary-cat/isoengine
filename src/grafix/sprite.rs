@@ -15,6 +15,7 @@
 // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+use std::error::FromError;
 use std::old_path::Path;
 
 use png;
@@ -69,9 +70,12 @@ pub struct Sheet {
 impl Sheet {
     /// Load a `Sheet` from a descriptor. This turns the paths in the `SheetDesc` into OpenGL
     /// textures.
-    pub fn from_desc(desc: SheetDesc) -> Result<Sheet, String> {
+    pub fn from_desc(desc: SheetDesc) -> Result<Sheet, Error> {
         let color_path = Path::new(desc.color_path);
         let depth_path = Path::new(desc.depth_path);
+
+        let color_png = try!(png::load_png(&color_path).map_err(Error::PngError));
+        let depth_png = try!(png::load_png(&depth_path).map_err(Error::PngError));
 
         Ok( Sheet {
             tex_width:  desc.tex_width,
@@ -83,11 +87,13 @@ impl Sheet {
             num_across: desc.num_across,
             num_down:   desc.num_down,
 
-            color: opengl::Tex2D::from_png(&try!(png::load_png(&color_path))),
-            depth: opengl::Tex2D::from_png(&try!(png::load_png(&depth_path))),
+            color: opengl::Tex2D::from_png(&color_png),
+            depth: opengl::Tex2D::from_png(&depth_png),
         })
     }
 }
+
+
 
 /// Struct which encapsulates the GL state needed to render sprites.
 pub struct Renderer {
@@ -97,13 +103,37 @@ pub struct Renderer {
 impl Renderer {
     /// Create a new `sprite::Renderer`. This compiles and links a shader program, so it should only
     /// be called after OpenGL has been initialized.
-    pub fn new() -> Renderer {
-        let vtx = opengl::Shader::new_vertex(include_str!("shaders/sprite.vtx"));
-        let geo = opengl::Shader::new_vertex(include_str!("shaders/sprite.geo"));
-        let frg = opengl::Shader::new_vertex(include_str!("shaders/sprite.frg"));
+    pub fn new() -> Result<Renderer, Error> {
+        let vtx = try!(opengl::Shader::new_vertex(include_str!("shaders/sprite.vtx")));
+        let geo = try!(opengl::Shader::new_geometry(include_str!("shaders/sprite.geo")));
+        let frg = try!(opengl::Shader::new_fragment(include_str!("shaders/sprite.frg")));
 
-        let prog = opengl::ShaderProgram::from_shaders(vec![vtx, geo, frg].into_iter());
+        let prog = try!(opengl::ShaderProgram::from_shaders(vec![vtx, geo, frg].into_iter()));
 
-        Renderer { prog: prog }
+        Ok(Renderer { prog: prog })
+    }
+}
+
+/// An error encountered when loading sprites or related resources.
+pub enum Error {
+    /// Error loading a PNG.
+    PngError(String),
+
+    /// Error compiling a shader.
+    CompileError(opengl::CompileError),
+
+    /// Error linking a shader program.
+    LinkError(opengl::LinkError),
+}
+
+impl FromError<opengl::CompileError> for Error {
+    fn from_error(err: opengl::CompileError) -> Error {
+        Error::CompileError(err)
+    }
+}
+
+impl FromError<opengl::LinkError> for Error {
+    fn from_error(err: opengl::LinkError) -> Error {
+        Error::LinkError(err)
     }
 }
