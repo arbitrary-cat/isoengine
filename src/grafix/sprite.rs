@@ -15,6 +15,7 @@
 // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+use std::collections::HashMap;
 use std::error::FromError;
 use std::old_path::Path;
 
@@ -111,6 +112,51 @@ impl Renderer {
         let prog = try!(opengl::ShaderProgram::from_shaders(&[vtx, geo, frg]));
 
         Ok(Renderer { prog: prog })
+    }
+}
+
+/// An ID that refers to a particular `Sheet` in a `Database`.
+pub type SheetID = usize;
+
+/// Central storage for Sheets, it provides two mappings: `String -> ID` and `ID -> Sheet`.
+pub struct Database {
+    name2id:  HashMap<String, SheetID>,
+    id2sheet: Vec<Sheet>,
+}
+
+impl Database {
+    /// Create a new empty `Database`.
+    pub fn new() -> Database {
+        Database {
+            name2id:  HashMap::new(),
+            id2sheet: Vec::new(),
+        }
+    }
+
+    /// Insert a sprite sheet into the `Database`. If there is already a sheet by this name than an
+    /// error will be logged and `self` will be unchanged.
+    pub fn insert(&mut self, name: String, sheet: Sheet) {
+        if self.name2id.contains_key(&name) {
+            println!("Attempt to load additional sprite sheet named `{}' ignored.", name);
+            return
+        }
+
+        let id = self.id2sheet.len();
+
+        assert_eq!(self.name2id.insert(name, id), None);
+        self.id2sheet.push(sheet);
+    }
+
+    /// If there is a `Sheet` stored under `name` in the database, return its id. Otherwise return
+    /// None.
+    pub fn get_id(&self, name: &str) -> Option<SheetID> {
+        self.name2id.get(name).cloned()
+    }
+
+    /// Get a sprite sheet from an id. If there is no sheet with that id, then None is returned. But
+    /// that should never happen because you got the id by calling `self.get_id()`... right?
+    pub fn get_sheet(&self, id: SheetID) -> Option<&Sheet> {
+        self.id2sheet.get(id)
     }
 }
 
