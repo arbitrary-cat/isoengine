@@ -307,8 +307,6 @@ impl ShaderProgram {
                 for s in shaders.iter() {
                     // Detach shaders so they can be deleted.
                     trace!(gl::DetachShader(gl_prog, s.0))
-                    // Note: apparently this doesn't need to be unsafe? But all the other gl::*
-                    // stuff does? I don't get it...
                 }
 
                 Ok(ShaderProgram(gl_prog))
