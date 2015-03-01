@@ -18,4 +18,5 @@
 /// Boilerplate-reducing abstractions around OpenGL, taylored to the specific use-case of isoengine.
 pub mod opengl;
 
+/// Sprite-drawing interface built on top of the `grafix::opengl` module.
 pub mod sprite;

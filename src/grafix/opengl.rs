@@ -251,6 +251,12 @@ impl Shader {
     }
 }
 
+impl Drop for Shader {
+    fn drop(&mut self) {
+        unsafe { gl::DeleteShader(self.0) }
+    }
+}
+
 /// A linked OpenGL shader program object.
 pub struct ShaderProgram(GLuint);
 
