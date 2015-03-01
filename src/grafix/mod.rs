@@ -20,3 +20,6 @@ pub mod opengl;
 
 /// Sprite-drawing interface built on top of the `grafix::opengl` module.
 pub mod sprite;
+
+/// Vector math for grafix.
+pub mod math;
