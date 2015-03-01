@@ -15,7 +15,7 @@
 // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-use std::old_path::{Path, BytesContainer};
+use std::old_path::Path;
 
 use png;
 
@@ -23,16 +23,28 @@ use grafix::opengl;
 
 /// A descriptor which explains the properties of a sprite sheet and where to find the textures.
 pub struct SheetDesc {
+    /// Width of the texture, in texels.
     pub tex_width:  u32,
+
+    /// Height of the texture, in texels.
     pub tex_height: u32,
 
+    /// Width of each sprite, in texels.
     pub spr_width:  u32,
+
+    /// Height of each sprite, in texels.
     pub spr_height: u32,
 
+    /// Number of sprites in each row in the sheet.
     pub num_across: u32,
+
+    /// Number of sprites in each column in the sheet.
     pub num_down:   u32,
 
+    /// Path to the color PNG for this sprite sheet.
     pub color_path: String,
+
+    /// Path to the depth PNG for this sprite sheet.
     pub depth_path: String,
 }
 
@@ -55,7 +67,8 @@ pub struct Sheet {
 }
 
 impl Sheet {
-    /// Load a Sprite from a descriptor. This turns the paths in the `Sheet
+    /// Load a `Sheet` from a descriptor. This turns the paths in the `SheetDesc` into OpenGL
+    /// textures.
     pub fn from_desc(desc: SheetDesc) -> Result<Sheet, String> {
         let color_path = Path::new(desc.color_path);
         let depth_path = Path::new(desc.depth_path);
