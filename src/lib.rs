@@ -15,7 +15,7 @@
 // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#![feature(collections, std_misc)]
+#![feature(collections, old_path, std_misc)]
 
 #![warn(missing_docs)]
 
@@ -28,12 +28,14 @@ extern crate sdl2;
 /// High-level graphics abstractions built on top of OpenGL.
 pub mod grafix;
 
+use grafix::opengl;
+
 /// A RAII handle for the whole engine. Once this baby leaves scope, it's curtains.
 ///
 /// ...I'm tired, okay?
 #[allow(dead_code)]
 pub struct Context {
-    gfx: grafix::opengl::Context,
+    gfx: opengl::Context,
     sdl: sdl2::Sdl,
 }
 
@@ -42,7 +44,7 @@ impl Context {
     /// initialize all SDL subsystems.
     pub fn new(title: &str, x_res: i32, y_res: i32) -> Result<Context, String> {
         let sdl = try!(sdl2::init(sdl2::INIT_EVERYTHING));
-        let gfx = try!(grafix::opengl::Context::new(title, x_res, y_res));
+        let gfx = try!(opengl::Context::new(title, x_res, y_res));
 
         Ok(Context { sdl: sdl, gfx: gfx })
     }
