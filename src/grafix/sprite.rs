@@ -108,7 +108,7 @@ impl Renderer {
         let geo = try!(opengl::Shader::new_geometry(include_str!("shaders/sprite.geo")));
         let frg = try!(opengl::Shader::new_fragment(include_str!("shaders/sprite.frg")));
 
-        let prog = try!(opengl::ShaderProgram::from_shaders(vec![vtx, geo, frg].into_iter()));
+        let prog = try!(opengl::ShaderProgram::from_shaders(&[vtx, geo, frg]));
 
         Ok(Renderer { prog: prog })
     }

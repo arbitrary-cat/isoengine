@@ -178,6 +178,13 @@ impl Tex2D {
     }
 }
 
+impl Drop for Tex2D {
+    /// Call `glDeleteTextures` on this texture.
+    fn drop(&mut self) {
+        unsafe { gl::DeleteTextures(1, &self.0) }
+    }
+}
+
 /// An error that occurred while compiling a shader.
 #[derive(Debug)]
 pub struct CompileError {
@@ -252,6 +259,8 @@ impl Shader {
 }
 
 impl Drop for Shader {
+    /// Call `glDeleteShader` on this shader. Shaders should be dropped as soon as possible after
+    /// linking, since they keep unnecessary source and object code around in GL memory.
     fn drop(&mut self) {
         unsafe { gl::DeleteShader(self.0) }
     }
@@ -262,12 +271,12 @@ pub struct ShaderProgram(GLuint);
 
 impl ShaderProgram {
     /// Link several `Shader`s into a `ShaderProgram`.
-    pub fn from_shaders<I>(shaders: I) -> Result<ShaderProgram, LinkError>
-        where I: Iterator<Item = Shader> {
+    pub fn from_shaders(shaders: &[Shader]) -> Result<ShaderProgram, LinkError> {
 
         let gl_prog = unsafe { trace!(gl::CreateProgram()) };
 
-        for s in shaders {
+        for s in shaders.iter() {
+            // Attach shaders for linking.
             unsafe { trace!(gl::AttachShader(gl_prog, s.0)) };
         }
 
@@ -295,6 +304,13 @@ impl ShaderProgram {
 
                 Err(LinkError{info_log: log})
             } else {
+                for s in shaders.iter() {
+                    // Detach shaders so they can be deleted.
+                    trace!(gl::DetachShader(gl_prog, s.0))
+                    // Note: apparently this doesn't need to be unsafe? But all the other gl::*
+                    // stuff does? I don't get it...
+                }
+
                 Ok(ShaderProgram(gl_prog))
             }
         }
@@ -322,6 +338,13 @@ impl ShaderProgram {
     }
 }
 
+impl Drop for ShaderProgram {
+    /// Call `glDeleteProgram` on this shader program.
+    fn drop(&mut self) {
+        unsafe { gl::DeleteProgram(self.0) }
+    }
+}
+
 /// Simplified interface to OpenGL's Vertex Array Objects.
 pub struct VertexArray(GLuint);
 
@@ -337,6 +360,13 @@ impl VertexArray {
     /// Call `glBindVertexArray` on this `VertexArray`.
     pub fn bind(&self) {
         unsafe { trace!(gl::BindVertexArray(self.0)) }
+    }
+}
+
+impl Drop for VertexArray {
+    /// Call `glDeleteVertexArrays` on this Vertex Array Object.
+    fn drop(&mut self) {
+        unsafe { gl::DeleteVertexArrays(1, &self.0) }
     }
 }
 
@@ -384,6 +414,13 @@ impl VertexBuffer {
                 gl::STREAM_DRAW,
             ));
         }
+    }
+}
+
+impl Drop for VertexBuffer {
+    /// Call `glDeleteBuffers` on this Vertex Buffer Object.
+    fn drop(&mut self) {
+        unsafe { gl::DeleteBuffers(1, &self.0) }
     }
 }
 
