@@ -25,6 +25,9 @@ extern crate gl;
 extern crate png;
 extern crate sdl2;
 
+#[macro_use]
+extern crate mkprim;
+
 /// High-level graphics abstractions built on top of OpenGL.
 pub mod grafix;
 

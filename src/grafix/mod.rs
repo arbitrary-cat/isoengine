@@ -23,3 +23,6 @@ pub mod sprite;
 
 /// Vector math for grafix.
 pub mod math;
+
+/// Types for working with relationships between screen-space and game-space.
+pub mod camera;

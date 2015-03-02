@@ -8,6 +8,9 @@ authors = ["Sam Payson <scpayson@gmail.com>"]
 
 trace_gl = []
 
+[dependencies.mkprim]
+git = "https://github.com/arbitrary-cat/mkprim.git"
+
 [dependencies.sdl2]
 git = "https://github.com/AngryLawyer/rust-sdl2.git"
 
