@@ -329,7 +329,7 @@ impl ShaderProgram {
         };
 
         if attrib == -1 {
-            Err(NoSuchActiveAttrib)
+            Err(NoSuchActiveAttrib(name.to_string()))
         } else {
             Ok(VertexAttrib(attrib as GLuint))
         }
@@ -425,7 +425,7 @@ impl Drop for VertexBuffer {
 /// Error returned to indicate that the requested attribute does not exist (or that the user has
 /// requested the location of a built-in attributed beginning with `gl_`).
 #[derive(Debug)]
-pub struct NoSuchActiveAttrib;
+pub struct NoSuchActiveAttrib(pub String);
 
 /// Simplified interface to an OpenGL Vertex Attribute.
 pub struct VertexAttrib(GLuint);

@@ -17,10 +17,13 @@
 
 use std::collections::HashMap;
 use std::error::FromError;
+use std::mem;
 use std::old_path::Path;
 
+use gl;
 use png;
 
+use grafix::math;
 use grafix::opengl;
 
 /// A descriptor which explains the properties of a sprite sheet and where to find the textures.
@@ -94,11 +97,35 @@ impl Sheet {
     }
 }
 
+/// This is the vertex type that is sent to the GPU
+struct SpriteVertex {
+    // Corners of the sprite
+    screen_TL: math::Vec2<f32>,
+    screen_BR: math::Vec2<f32>,
 
+    // Corners of the texture
+    tex_TL: math::Vec2<f32>,
+    tex_BR: math::Vec2<f32>,
+
+    // Depth of the origin of the sprite from the camera, in the same units as the depth channel of
+    // the sprite.
+    depth: f32,
+}
 
 /// Struct which encapsulates the GL state needed to render sprites.
 pub struct Renderer {
     prog: opengl::ShaderProgram,
+    vao:  opengl::VertexArray,
+    vbo:  opengl::VertexBuffer,
+}
+
+macro_rules! attrib_offset {
+    ($attr:ident) => ( unsafe {
+        let base: &SpriteVertex = mem::transmute(0usize);
+        let offs: usize = mem::transmute(&base.$attr);
+
+        offs
+    })
 }
 
 impl Renderer {
@@ -111,7 +138,38 @@ impl Renderer {
 
         let prog = try!(opengl::ShaderProgram::from_shaders(&[vtx, geo, frg]));
 
-        Ok(Renderer { prog: prog })
+        // All of the attribute state will be stored in this VAO.
+        let vao = opengl::VertexArray::new();
+        vao.bind();
+
+        let screen_TL = try!(prog.get_attrib("screen_TL"));
+        let screen_BR = try!(prog.get_attrib("screen_BR"));
+
+        let tex_TL = try!(prog.get_attrib("tex_TL"));
+        let tex_BR = try!(prog.get_attrib("tex_BR"));
+
+        let depth = try!(prog.get_attrib("depth"));
+
+        screen_TL.set_pointer(2, gl::FLOAT, false, mem::size_of::<SpriteVertex>(),
+            attrib_offset!(screen_TL));
+
+        screen_BR.set_pointer(2, gl::FLOAT, false, mem::size_of::<SpriteVertex>(),
+            attrib_offset!(screen_BR));
+
+        tex_TL.set_pointer(2, gl::FLOAT, false, mem::size_of::<SpriteVertex>(),
+            attrib_offset!(tex_TL));
+
+        tex_BR.set_pointer(2, gl::FLOAT, false, mem::size_of::<SpriteVertex>(),
+            attrib_offset!(tex_BR));
+
+        depth.set_pointer(1, gl::FLOAT, false, mem::size_of::<SpriteVertex>(),
+            attrib_offset!(depth));
+
+        Ok(Renderer {
+            prog: prog,
+            vao:  vao,
+            vbo:  opengl::VertexBuffer::new(),
+        })
     }
 }
 
@@ -170,6 +228,9 @@ pub enum Error {
 
     /// Error linking a shader program.
     LinkError(opengl::LinkError),
+
+    /// The engine and the shaders disagree about the name of an attribute.
+    NoSuchActiveAttrib(String),
 }
 
 impl FromError<opengl::CompileError> for Error {
@@ -181,5 +242,13 @@ impl FromError<opengl::CompileError> for Error {
 impl FromError<opengl::LinkError> for Error {
     fn from_error(err: opengl::LinkError) -> Error {
         Error::LinkError(err)
+    }
+}
+
+impl FromError<opengl::NoSuchActiveAttrib> for Error {
+    fn from_error(err: opengl::NoSuchActiveAttrib) -> Error {
+        match err {
+            opengl::NoSuchActiveAttrib(id) => Error::NoSuchActiveAttrib(id),
+        }
     }
 }
