@@ -21,7 +21,6 @@ mod vector3d;
 pub use grafix::math::vector2d::Vec2;
 pub use grafix::math::vector3d::Vec3;
 
-#[export_macro]
 macro_rules! vec2 {
-    ($x:expr, $y:expr) => (Vec2 { x: $x, y: $y })
+    ($x:expr, $y:expr) => ($crate::grafix::math::Vec2 { x: $x, y: $y })
 }

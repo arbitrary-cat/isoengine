@@ -22,6 +22,7 @@ pub mod opengl;
 pub mod sprite;
 
 /// Vector math for grafix.
+#[macro_use]
 pub mod math;
 
 /// Types for working with relationships between screen-space and game-space.
