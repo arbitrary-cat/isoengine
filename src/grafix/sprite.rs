@@ -15,17 +15,21 @@
 // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+#![allow(dead_code)]
+
 use std::collections::HashMap;
 use std::error::FromError;
 use std::mem;
 use std::old_path::Path;
 
 use gl;
+use gl::types::*;
 use png;
 
 use grafix::math;
 use grafix::opengl;
 use grafix::units::*;
+use grafix::camera::Camera;
 
 /// A descriptor which explains the properties of a sprite sheet and where to find the textures.
 pub struct SheetDesc {
@@ -258,6 +262,126 @@ impl Database {
     /// that should never happen because you got the id by calling `self.get_id()`... right?
     pub fn get_sheet(&self, id: SheetID) -> Option<&Sheet> {
         self.id2sheet.get(id)
+    }
+}
+
+/// A request for a sprite to be drawn. These are aggregated by the `Batcher` and turned into
+/// efficient OpenGL calls.
+#[derive(Copy,Clone)]
+pub struct DrawReq {
+    /// The id of the sprite-sheet where this sprite resides.
+    pub sheet_id: SheetID,
+
+    /// The index into that sheet of the sprite to be drawn.
+    pub sprite_idx: usize,
+
+    /// The location in the game world where that sprite's origin should be located.
+    pub game_loc: math::Vec3<Meters>
+}
+
+impl DrawReq {
+    fn to_vertex(&self, cam: &Camera, sheet: &Sheet) -> SpriteVertex {
+        #![allow(non_snake_case)]
+
+        use std::num::Float;
+
+        let  cam_loc         = cam.game_to_camera(self.game_loc);
+        let (scr_loc, depth) = cam.camera_to_screen(cam_loc);
+
+        let row_coef = TexCoord((self.sprite_idx / sheet.num_across) as f32);
+        let col_coef = TexCoord((self.sprite_idx % sheet.num_across) as f32);
+
+        let tex_TL = vec2!(row_coef, col_coef) * sheet.tex_dimens;
+        let tex_BR = vec2!(row_coef + Float::one(), col_coef + Float::one()) * sheet.tex_dimens;
+
+        let screen_TL_px = scr_loc - sheet.origin;
+        let screen_BR_px = screen_TL_px + sheet.scr_dimens;
+
+        SpriteVertex {
+            screen_TL: cam.screen_to_ndu(screen_TL_px),
+            screen_BR: cam.screen_to_ndu(screen_BR_px),
+
+            tex_TL: tex_TL,
+            tex_BR: tex_BR,
+
+            depth: depth,
+        }
+    }
+}
+
+/// The `Batcher` gathers the set of sprites that need to be drawn each frame and aggregates them
+/// into a smaller number of GL draw calls.
+pub struct Batcher<'x> {
+    by_sheet: Vec<Vec<DrawReq>>,
+    renderer: &'x Renderer,
+}
+
+impl<'x> Batcher<'x> {
+    /// Return a batcher which will use the given renderer.
+    pub fn new(r: &'x Renderer) -> Batcher<'x> {
+        Batcher {
+            by_sheet: vec![],
+            renderer: r,
+        }
+    }
+
+    /// Register a `DrawReq` for this batch.
+    pub fn register(&mut self, req: DrawReq) {
+        if req.sheet_id >= self.by_sheet.len() {
+            self.by_sheet.resize(req.sheet_id + 1, vec![])
+        }
+
+        self.by_sheet[req.sheet_id].push(req)
+    }
+
+    /// Render all `DrawReq`s which have been passed to this `Batcher`. In addition to causing them
+    /// to be rendered, this will also leave the `Batcher` clear for the next frame.
+    pub fn render_batch(&mut self, db: &Database, cam: &Camera) {
+        struct RenderGroup<'x> {
+            first: usize,
+            count: usize,
+            sheet: &'x Sheet,
+        }
+
+
+        let mut verts  = vec![];
+        let mut groups = vec![];
+
+        for (id, reqs) in self.by_sheet.iter().enumerate().filter(|&(_, v)| { !v.is_empty() }) {
+            let sheet = match db.get_sheet(id) {
+                Some(sheet) => sheet,
+                None        => continue,
+            };
+
+            groups.push(RenderGroup {
+                first: verts.len(),
+                count: reqs.len(),
+                sheet: sheet,
+            });
+
+            for req in reqs.iter() {
+                verts.push(req.to_vertex(cam, sheet))
+            }
+        }
+
+        self.renderer.vbo.buffer_stream(&verts);
+
+        self.renderer.prog.use_program();
+
+        self.renderer.vao.bind();
+
+        for g in groups {
+            g.sheet.color.bind_to_unit(0);
+            g.sheet.depth.bind_to_unit(0);
+
+            unsafe {
+                gl::DrawArrays(gl::POINTS, g.first as GLint, g.count as GLsizei);
+            }
+        }
+
+        for v in self.by_sheet.iter_mut() {
+            v.clear();
+        }
     }
 }
 
