@@ -34,6 +34,12 @@ pub struct SheetDesc {
     /// Height of the texture, in texels.
     pub tex_height: u32,
 
+    /// X-coordinate of origin pixel.
+    pub origin_x: u32,
+
+    /// Y-coordinate of origin pixel.
+    pub origin_y: u32,
+
     /// Width of each sprite, in texels.
     pub spr_width:  u32,
 
@@ -98,6 +104,7 @@ impl Sheet {
 }
 
 /// This is the vertex type that is sent to the GPU
+#[allow(non_snake_case)]
 struct SpriteVertex {
     // Corners of the sprite
     screen_TL: math::Vec2<f32>,
@@ -131,6 +138,7 @@ macro_rules! attrib_offset {
 impl Renderer {
     /// Create a new `sprite::Renderer`. This compiles and links a shader program, so it should only
     /// be called after OpenGL has been initialized.
+    #[allow(non_snake_case)]
     pub fn new() -> Result<Renderer, Error> {
         let vtx = try!(opengl::Shader::new_vertex(include_str!("shaders/sprite.vtx")));
         let geo = try!(opengl::Shader::new_geometry(include_str!("shaders/sprite.geo")));
@@ -191,8 +199,12 @@ impl Database {
         }
     }
 
-    /// Insert a sprite sheet into the `Database`. If there is already a sheet by this name than an
-    /// error will be logged and `self` will be unchanged.
+    /// Insert a sprite sheet into the `Database`.
+    ///
+    /// # Errors
+    ///
+    /// If there is already a sheet by this name than an error will be logged and `self` will be
+    /// unchanged.
     pub fn insert(&mut self, name: String, sheet: Sheet) {
         if self.name2id.contains_key(&name) {
             println!("Attempt to load additional sprite sheet named `{}' ignored.", name);
