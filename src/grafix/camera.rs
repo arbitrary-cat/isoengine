@@ -76,4 +76,26 @@ impl Camera {
             z: tr.x*Meters(m[2][0]) + tr.y*Meters(m[2][1]) + tr.z*Meters(m[2][2]),
         }
     }
+
+    /// Convert a camera-space coordinate to a screen coordinate, quantized to pixels. The `z'
+    /// component of `cam` is returned on its own.
+    #[inline]
+    pub fn camera_to_screen(&self, cam: math::Vec3<Meters>) -> (math::Vec2<Pixels>, Meters) {
+        let x_px = Pixels(cam.x.0 * self.scale).floor();
+        let y_px = Pixels(cam.y.0 * self.scale).floor();
+
+        (vec2!(x_px, y_px), cam.z)
+    }
+
+    /// Convert a game-screen coordinate to NDU.
+    #[inline]
+    pub fn screen_to_ndu(&self, scr: math::Vec2<Pixels>) -> math::Vec2<NDU> {
+        let x_ndu = NDU(scr.x.0 / (self.resolution.x.0 / 2.0));
+        let y_ndu = NDU(scr.y.0 / (self.resolution.y.0 / 2.0));
+
+        vec2!(x_ndu, y_ndu)
+
+        // TODO: Check to see if the aspect ratio of self.resolution differs from
+        // self.true_resolution and adjust the result accordingly.
+    }
 }
