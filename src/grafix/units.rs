@@ -33,4 +33,7 @@ mkprim! {
     // Normalized Device Units, This is the unit that we actually send to OpenGL, and in which the
     // shaders think.
     pub NDU(pub f32);
+
+    // A texture coordinate, in the range [0.0, 1.0].
+    pub TexCoord(pub f32);
 }
