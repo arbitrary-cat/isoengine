@@ -25,14 +25,15 @@ use png;
 
 use grafix::math;
 use grafix::opengl;
+use grafix::units::*;
 
 /// A descriptor which explains the properties of a sprite sheet and where to find the textures.
 pub struct SheetDesc {
     /// Width of the texture, in texels.
-    pub tex_width:  u32,
+    pub img_width:  u32,
 
     /// Height of the texture, in texels.
-    pub tex_height: u32,
+    pub img_height: u32,
 
     /// X-coordinate of origin pixel.
     pub origin_x: u32,
@@ -41,7 +42,7 @@ pub struct SheetDesc {
     pub origin_y: u32,
 
     /// Width of each sprite, in texels.
-    pub spr_width:  u32,
+    pub spr_width: u32,
 
     /// Height of each sprite, in texels.
     pub spr_height: u32,
@@ -50,7 +51,10 @@ pub struct SheetDesc {
     pub num_across: u32,
 
     /// Number of sprites in each column in the sheet.
-    pub num_down:   u32,
+    pub num_down: u32,
+
+    /// Total number of sprites in the sheet.
+    pub total: u32,
 
     /// Path to the color PNG for this sprite sheet.
     pub color_path: String,
@@ -61,14 +65,25 @@ pub struct SheetDesc {
 
 /// A sprite sheet.
 pub struct Sheet {
-    tex_width:  u32,
-    tex_height: u32,
+    // Dimensions of the whole image.
+    img_dimens: math::Vec2<Pixels>,
 
-    spr_width:  u32,
-    spr_height: u32,
+    // Position of a sprite's origin as a ratio of width and height.
+    origin: math::Vec2<Pixels>,
 
-    num_across: u32,
-    num_down:   u32,
+    // Dimensions of a sprite in pixels.
+    scr_dimens: math::Vec2<Pixels>,
+
+    // Dimensions of a sprite in texture coordinates (i.e. as a ration of the whole image's size).
+    tex_dimens: math::Vec2<TexCoord>,
+
+    // Number of sprites in each row/column of the sheet. There may be 'slack' along the right side
+    // or bottom of the texture, if `scr_dimens` doesn't evenly divide `img_dimens`.
+    num_across: usize,
+    num_down:   usize,
+
+    // Number of sprites in the sheet (num_across * (num_down - 1) < total <= num_across * num_down)
+    total: usize,
 
     // RGBA texture which gives the sprite its color.
     color: opengl::Tex2D,
@@ -88,14 +103,30 @@ impl Sheet {
         let depth_png = try!(png::load_png(&depth_path).map_err(Error::PngError));
 
         Ok( Sheet {
-            tex_width:  desc.tex_width,
-            tex_height: desc.tex_height,
+            img_dimens: vec2!(
+                Pixels(desc.img_width as f32),
+                Pixels(desc.img_height as f32),
+            ),
 
-            spr_width:  desc.spr_width,
-            spr_height: desc.spr_height,
+            origin: vec2!(
+                Pixels(desc.origin_x as f32),
+                Pixels(desc.origin_y as f32),
+            ),
 
-            num_across: desc.num_across,
-            num_down:   desc.num_down,
+            scr_dimens: vec2!(
+                Pixels(desc.spr_width as f32),
+                Pixels(desc.spr_height as f32),
+            ),
+
+            tex_dimens: vec2!(
+                TexCoord((desc.spr_width as f32)  / (desc.img_width as f32)),
+                TexCoord((desc.spr_height as f32) / (desc.img_height as f32)),
+            ),
+
+            num_across: desc.num_across as usize,
+            num_down:   desc.num_down as usize,
+
+            total: desc.total as usize,
 
             color: opengl::Tex2D::from_png(&color_png),
             depth: opengl::Tex2D::from_png(&depth_png),
@@ -107,16 +138,16 @@ impl Sheet {
 #[allow(non_snake_case)]
 struct SpriteVertex {
     // Corners of the sprite
-    screen_TL: math::Vec2<f32>,
-    screen_BR: math::Vec2<f32>,
+    screen_TL: math::Vec2<NDU>,
+    screen_BR: math::Vec2<NDU>,
 
     // Corners of the texture
-    tex_TL: math::Vec2<f32>,
-    tex_BR: math::Vec2<f32>,
+    tex_TL: math::Vec2<TexCoord>,
+    tex_BR: math::Vec2<TexCoord>,
 
-    // Depth of the origin of the sprite from the camera, in the same units as the depth channel of
-    // the sprite.
-    depth: f32,
+    // Depth of the origin of the sprite from the camera. In meters, since that's the unit used in
+    // the depth texture.
+    depth: Meters,
 }
 
 /// Struct which encapsulates the GL state needed to render sprites.
