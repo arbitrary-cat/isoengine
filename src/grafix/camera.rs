@@ -15,20 +15,10 @@
 // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-// Workaround since we can't put doc comments inside of the mkprim! macro.
-#![allow(missing_docs)]
-
 use std::num::Float;
 
 use grafix::math;
-
-mkprim! {
-    pub Meters(f32);
-
-    pub Pixels(f32);
-
-    pub DevicePixels(f32);
-}
+use grafix::units::*;
 
 /// A camera for a world with an isometric orthogonal projection. The camera knows how to translate
 /// from coordinates in the game world to OpenGL's Normalized Device Units.
