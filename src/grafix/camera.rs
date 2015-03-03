@@ -38,7 +38,7 @@ pub struct Camera {
 
     // Note that the orientation of the camera is always the same, the euler angles are
     //
-    //     60° x, 0° y, 45° z 
+    //     60° x, 0° y, 45° z
 }
 
 impl Camera {
@@ -46,6 +46,7 @@ impl Camera {
     /// meters of the camera coordinate.
     ///
     /// Both are measured in meters, since camera space is still "in the game world".
+    #[inline]
     pub fn game_to_camera(&self, game: math::Vec3<Meters>) -> math::Vec3<Meters> {
         // Here we count on LLVM to reduce a lot of this stuff. Hopefully computing sin_cos on
         // constants is free, and it won't actually build the matrix below.
