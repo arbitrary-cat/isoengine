@@ -180,6 +180,7 @@ impl Renderer {
         let frg = try!(opengl::Shader::new_fragment(include_str!("shaders/sprite.frg")));
 
         let prog = try!(opengl::ShaderProgram::from_shaders(&[vtx, geo, frg]));
+        prog.use_program();
 
         // All of the attribute state will be stored in this VAO.
         let vao = opengl::VertexArray::new();
@@ -192,6 +193,9 @@ impl Renderer {
         let tex_BR = try!(prog.get_attrib("tex_BR"));
 
         let depth = try!(prog.get_attrib("depth"));
+
+        let vbo = opengl::VertexBuffer::new();
+        vbo.bind();
 
         screen_TL.set_pointer(2, gl::FLOAT, false, mem::size_of::<SpriteVertex>(),
             attrib_offset!(screen_TL));
@@ -211,7 +215,7 @@ impl Renderer {
         Ok(Renderer {
             prog: prog,
             vao:  vao,
-            vbo:  opengl::VertexBuffer::new(),
+            vbo:  vbo,
         })
     }
 }
@@ -386,6 +390,7 @@ impl<'x> Batcher<'x> {
 }
 
 /// An error encountered when loading sprites or related resources.
+#[derive(Debug)]
 pub enum Error {
     /// Error loading a PNG.
     PngError(String),
