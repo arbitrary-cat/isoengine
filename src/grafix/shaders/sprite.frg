@@ -17,8 +17,36 @@
 
 #version 150
 
+in FromGeo {
+    vec2  tex_coord;
+    float depth;
+};
+
 out vec4 color;
 
+uniform sampler2D color_tex;
+uniform sampler2D depth_tex;
+
+
 void main() {
-    color = vec4(1.0);
+
+    // Configurable constant.
+    // We will deal with things that are at most `max_depth` meters from the camera.
+    float max_depth = 100.0;
+
+
+    // Configurable constant.
+    // The units of the depth texture, how far in meters is the origin from the camera?
+    float depth_scale = 5.0;
+
+    float depth_sample = texture(depth_tex, tex_coord).r - 0.5;
+    vec4  color_sample = texture(depth_tex, tex_coord);
+
+    if (depth_sample > 0.48 || color_sample.a < 0.5) {
+        discard;
+    }
+
+    gl_FragDepth = (depth_sample*depth_scale + depth) / max_depth;
+
+    color = color_sample;
 }

@@ -17,14 +17,25 @@
 
 #version 150
 
-in vec2 top_left;
-in vec2 dimens;
+in vec2 screen_TL;
+in vec2 screen_BR;
+in vec2 tex_TL;
+in vec2 tex_BR;
+
+in float depth;
 
 out FromVert {
-    vec2 dimens;
+    vec2 screen_BR;
+    vec2 tex_TL;
+    vec2 tex_BR;
+    float depth;
 } to_geo;
 
 void main() {
-    to_geo.dimens = dimens;
-    gl_Position = vec4(top_left, 0.0, 1.0);
+    to_geo.screen_BR = screen_BR;
+    to_geo.tex_TL    = tex_TL;
+    to_geo.tex_BR    = tex_BR;
+    to_geo.depth     = depth;
+
+    gl_Position = vec4(screen_TL, 0.0, 1.0);
 }

@@ -22,23 +22,42 @@ layout(points) in;
 layout(triangle_strip, max_vertices = 4) out;
 
 in FromVert {
-    vec2 dimens;
+    vec2 screen_BR;
+    vec2 tex_TL;
+    vec2 tex_BR;
+    float depth;
 } to_geo[];
 
+out FromGeo {
+    vec2  tex_coord;
+    float depth;
+} to_frag;
+
 void main() {
-    float tl_x = gl_in[0].gl_Position.x;
-    float tl_y = gl_in[0].gl_Position.y;
+    vec2  screen_TL = gl_in[0].gl_Position.xy;
+    vec2  screen_BR = to_geo[0].screen_BR;
+    vec2  tex_TL    = to_geo[0].tex_TL;
+    vec2  tex_BR    = to_geo[0].tex_BR;
+    float depth     = to_geo[0].depth;
 
-    gl_Position = vec4(tl_x, tl_y, 0, 1.0);
+    gl_Position       = vec4(screen_TL.x, screen_TL.y, 0, 1.0);
+    to_frag.tex_coord = vec2(tex_TL.x, tex_TL.y);
+    to_frag.depth     = depth;
     EmitVertex();
 
-    gl_Position = vec4(tl_x + to_geo[0].dimens.x, tl_y, 0, 1.0);
+    gl_Position       = vec4(screen_BR.x, screen_TL.y, 0, 1.0);
+    to_frag.tex_coord = vec2(tex_BR.x, tex_TL.y);
+    to_frag.depth     = depth;
     EmitVertex();
 
-    gl_Position = vec4(tl_x, tl_y - to_geo[0].dimens.y, 0, 1.0);
+    gl_Position       = vec4(screen_TL.x, screen_BR.y, 0, 1.0);
+    to_frag.tex_coord = vec2(tex_TL.x, tex_BR.y);
+    to_frag.depth     = depth;
     EmitVertex();
 
-    gl_Position = vec4(tl_x + to_geo[0].dimens.x, tl_y - to_geo[0].dimens.y, 0, 1.0);
+    gl_Position       = vec4(screen_BR.x, screen_BR.y, 0, 1.0);
+    to_frag.tex_coord = vec2(tex_BR.x, tex_BR.y);
+    to_frag.depth     = depth;
     EmitVertex();
 
     EndPrimitive();
