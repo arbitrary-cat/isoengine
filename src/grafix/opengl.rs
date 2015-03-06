@@ -329,9 +329,24 @@ impl ShaderProgram {
         };
 
         if attrib == -1 {
-            Err(NoSuchActiveAttrib(name.to_string()))
+            Err(NoSuchActiveAttrib(String::from_str(name)))
         } else {
             Ok(VertexAttrib(attrib as GLuint))
+        }
+    }
+
+    /// Get a `Uniform` corresponding to one of the active uniforms in this `ShaderProgram`.
+    pub fn get_uniform(&self, name: &str) -> Result<Uniform, NoSuchActiveUniform> {
+        let gl_uniform = unsafe {
+            let cname = ffi::CString::new(name).unwrap();
+
+            trace!(gl::GetUniformLocation(self.0, cname.as_ptr() as *const GLchar))
+        };
+
+        if gl_uniform == -1 {
+            Err(NoSuchActiveUniform(String::from_str(name)))
+        } else {
+            Ok(Uniform(gl_uniform))
         }
     }
 }
@@ -448,5 +463,21 @@ impl VertexAttrib {
     /// Enable this vertex attribute.
     pub fn enable(&self) {
         unsafe { trace!(gl::EnableVertexAttribArray(self.0)) }
+    }
+}
+
+/// Error returned to indicate that the requested attribute does not exist (or that the user has
+/// requested the location of a built-in attributed beginning with `gl_`).
+#[derive(Debug)]
+pub struct NoSuchActiveUniform(pub String);
+
+/// A uniform variable from a shader program.
+pub struct Uniform(GLint);
+
+impl Uniform {
+    /// Call glUniform1i on the underlying uniform. The corresponding program must be active in
+    /// order for this to work as expected.
+    pub fn set1i(&self, x: i32) {
+        unsafe { trace!(gl::Uniform1i(self.0, x as GLint)) }
     }
 }
