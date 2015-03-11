@@ -25,6 +25,7 @@ in vec2 tex_BR;
 in float depth;
 
 out FromVert {
+    vec2 screen_TL;
     vec2 screen_BR;
     vec2 tex_TL;
     vec2 tex_BR;
@@ -32,10 +33,9 @@ out FromVert {
 } to_geo;
 
 void main() {
+    to_geo.screen_TL = screen_TL;
     to_geo.screen_BR = screen_BR;
     to_geo.tex_TL    = tex_TL;
     to_geo.tex_BR    = tex_BR;
     to_geo.depth     = depth;
-
-    gl_Position = vec4(screen_TL, 0.0, 1.0);
 }

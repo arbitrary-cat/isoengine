@@ -39,10 +39,10 @@ void main() {
     // The units of the depth texture, how far in meters is the origin from the camera?
     float depth_scale = 5.0;
 
-    float depth_sample = texture(depth_tex, tex_coord).r - 0.5;
-    vec4  color_sample = texture(depth_tex, tex_coord);
+    float depth_sample = 2*texture(depth_tex, tex_coord).r - 1;
+    vec4  color_sample = texture(color_tex, tex_coord);
 
-    if (depth_sample > 0.48 || color_sample.a < 0.5) {
+    if (depth_sample > 0.95 || color_sample.a < 0.5) {
         discard;
     }
 

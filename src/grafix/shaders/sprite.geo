@@ -22,6 +22,7 @@ layout(points) in;
 layout(triangle_strip, max_vertices = 4) out;
 
 in FromVert {
+    vec2 screen_TL;
     vec2 screen_BR;
     vec2 tex_TL;
     vec2 tex_BR;
@@ -34,7 +35,7 @@ out FromGeo {
 } to_frag;
 
 void main() {
-    vec2  screen_TL = gl_in[0].gl_Position.xy;
+    vec2  screen_TL = to_geo[0].screen_TL;
     vec2  screen_BR = to_geo[0].screen_BR;
     vec2  tex_TL    = to_geo[0].tex_TL;
     vec2  tex_BR    = to_geo[0].tex_BR;
