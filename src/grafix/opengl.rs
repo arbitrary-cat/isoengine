@@ -271,47 +271,57 @@ pub struct ShaderProgram(GLuint);
 
 impl ShaderProgram {
     /// Link several `Shader`s into a `ShaderProgram`.
-    pub fn from_shaders(shaders: &[Shader]) -> Result<ShaderProgram, LinkError> {
+    pub fn new(shaders: &[Shader]) -> Result<ShaderProgram, LinkError> {
 
-        let gl_prog = unsafe { trace!(gl::CreateProgram()) };
+        Ok( ShaderProgram( unsafe {
+            let gl_prog = trace!(gl::CreateProgram());
 
-        for s in shaders.iter() {
-            // Attach shaders for linking.
-            unsafe { trace!(gl::AttachShader(gl_prog, s.0)) };
-        }
-
-        unsafe {
-            trace!(gl::LinkProgram(gl_prog));
-
-            // Check if the program linked successfully.
-            let mut status: GLint = 0;
-            trace!(gl::GetProgramiv(gl_prog, gl::LINK_STATUS, &mut status));
-
-            // If the program failed to link, get the info log and return it as an error.
-            if status != (gl::TRUE as GLint) {
-                let mut log_len = 0;
-                trace!(gl::GetProgramiv(gl_prog, gl::INFO_LOG_LENGTH, &mut log_len));
-                let mut log_buf: Vec<u8> = iter::repeat(0u8).take(log_len as usize).collect();
-                let log_ptr = log_buf.as_mut_ptr() as *mut GLchar;
-
-                let mut real_len = 0;
-                trace!(gl::GetProgramInfoLog(gl_prog, log_len as GLsizei, &mut real_len, log_ptr));
-                // real_len doesn't include the null terminator.
-                log_buf.truncate(real_len as usize);
-
-                let log = String::from_utf8(log_buf)
-                    .unwrap_or(String::from_str("Info log was not valid utf-8"));
-
-                Err(LinkError{info_log: log})
-            } else {
-                for s in shaders.iter() {
-                    // Detach shaders so they can be deleted.
-                    trace!(gl::DetachShader(gl_prog, s.0))
-                }
-
-                Ok(ShaderProgram(gl_prog))
+            for s in shaders.iter() {
+                // Attach shaders for linking.
+                trace!(gl::AttachShader(gl_prog, s.0));
             }
+
+            try!(ShaderProgram::link(gl_prog));
+
+            for s in shaders.iter() {
+                // Detach shaders so they can be deleted.
+                trace!(gl::DetachShader(gl_prog, s.0))
+            }
+
+            gl_prog
+        }))
+    }
+
+
+
+
+
+    unsafe fn link(gl_prog: GLuint) -> Result<(), LinkError> {
+
+        trace!(gl::LinkProgram(gl_prog));
+
+        // Check if the program linked successfully.
+        let mut status: GLint = 0;
+        trace!(gl::GetProgramiv(gl_prog, gl::LINK_STATUS, &mut status));
+
+        // If the program failed to link, get the info log and return it as an error.
+        if status != (gl::TRUE as GLint) {
+            let mut log_len = 0;
+            trace!(gl::GetProgramiv(gl_prog, gl::INFO_LOG_LENGTH, &mut log_len));
+            let mut log_buf: Vec<u8> = iter::repeat(0u8).take(log_len as usize).collect();
+            let log_ptr = log_buf.as_mut_ptr() as *mut GLchar;
+
+            let mut real_len = 0;
+            trace!(gl::GetProgramInfoLog(gl_prog, log_len as GLsizei, &mut real_len, log_ptr));
+            // real_len doesn't include the null terminator.
+            log_buf.truncate(real_len as usize);
+
+            let log = String::from_utf8(log_buf)
+                .unwrap_or(String::from_str("Info log was not valid utf-8"));
+
         }
+
+        Ok(())
     }
 
     /// Simple wrapper for `glUseProgram`.
