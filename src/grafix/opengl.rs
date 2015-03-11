@@ -181,7 +181,7 @@ impl Tex2D {
 impl Drop for Tex2D {
     /// Call `glDeleteTextures` on this texture.
     fn drop(&mut self) {
-        unsafe { gl::DeleteTextures(1, &self.0) }
+        unsafe { trace!(gl::DeleteTextures(1, &self.0)) }
     }
 }
 
@@ -262,7 +262,7 @@ impl Drop for Shader {
     /// Call `glDeleteShader` on this shader. Shaders should be dropped as soon as possible after
     /// linking, since they keep unnecessary source and object code around in GL memory.
     fn drop(&mut self) {
-        unsafe { gl::DeleteShader(self.0) }
+        unsafe { trace!(gl::DeleteShader(self.0)) }
     }
 }
 
@@ -354,7 +354,7 @@ impl ShaderProgram {
 impl Drop for ShaderProgram {
     /// Call `glDeleteProgram` on this shader program.
     fn drop(&mut self) {
-        unsafe { gl::DeleteProgram(self.0) }
+        unsafe { trace!(gl::DeleteProgram(self.0)) }
     }
 }
 
@@ -379,7 +379,7 @@ impl VertexArray {
 impl Drop for VertexArray {
     /// Call `glDeleteVertexArrays` on this Vertex Array Object.
     fn drop(&mut self) {
-        unsafe { gl::DeleteVertexArrays(1, &self.0) }
+        unsafe { trace!(gl::DeleteVertexArrays(1, &self.0)) }
     }
 }
 
@@ -433,7 +433,7 @@ impl VertexBuffer {
 impl Drop for VertexBuffer {
     /// Call `glDeleteBuffers` on this Vertex Buffer Object.
     fn drop(&mut self) {
-        unsafe { gl::DeleteBuffers(1, &self.0) }
+        unsafe { trace!(gl::DeleteBuffers(1, &self.0)) }
     }
 }
 
