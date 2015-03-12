@@ -31,6 +31,9 @@ use grafix::opengl;
 use grafix::units::*;
 use grafix::camera::Camera;
 
+// The maximum number of sprites that can be drawn on-screen at any given time.
+const MAX_SPRITES: usize = 16 * 1024;
+
 /// A descriptor which explains the properties of a sprite sheet and where to find the textures.
 pub struct SheetDesc {
     /// Width of the texture, in texels.
@@ -107,24 +110,18 @@ impl Sheet {
         let depth_png = try!(png::load_png(&depth_path).map_err(Error::PngError));
 
         Ok( Sheet {
-            img_dimens: vec2!(
-                Pixels(desc.img_width as f32),
-                Pixels(desc.img_height as f32),
+            img_dimens: vec2!(Pixels ;
+                desc.img_width as f32,
+                desc.img_height as f32,
             ),
 
-            origin: vec2!(
-                Pixels(desc.origin_x as f32),
-                Pixels(desc.origin_y as f32),
-            ),
+            origin: vec2!(Pixels ; desc.origin_x as f32, desc.origin_y as f32),
 
-            scr_dimens: vec2!(
-                Pixels(desc.spr_width as f32),
-                Pixels(desc.spr_height as f32),
-            ),
+            scr_dimens: vec2!(Pixels ; desc.spr_width as f32, desc.spr_height as f32),
 
-            tex_dimens: vec2!(
-                TexCoord((desc.spr_width as f32)  / (desc.img_width as f32)),
-                TexCoord((desc.spr_height as f32) / (desc.img_height as f32)),
+            tex_dimens: vec2!(TexCoord ;
+                (desc.spr_width as f32)  / (desc.img_width as f32),
+                (desc.spr_height as f32) / (desc.img_height as f32),
             ),
 
             num_across: desc.num_across as usize,
@@ -140,7 +137,8 @@ impl Sheet {
 
 /// This is the vertex type that is sent to the GPU
 #[allow(non_snake_case)]
-struct SpriteVertex {
+#[derive(Debug,Copy,Clone)]
+pub struct SpriteVertex {
     // Corners of the sprite
     screen_TL: math::Vec2<NDU>,
     screen_BR: math::Vec2<NDU>,
@@ -154,11 +152,26 @@ struct SpriteVertex {
     depth: Meters,
 }
 
-/// Struct which encapsulates the GL state needed to render sprites.
-pub struct Renderer {
-    prog: opengl::ShaderProgram,
-    vao:  opengl::VertexArray,
-    vbo:  opengl::VertexBuffer,
+impl SpriteVertex {
+    fn zero() -> SpriteVertex {
+        SpriteVertex {
+            screen_TL: vec2!(NDU ; 0.0, 0.0),
+            screen_BR: vec2!(NDU ; 0.0, 0.0),
+
+            tex_TL: vec2!(TexCoord ; 0.0, 0.0),
+            tex_BR: vec2!(TexCoord ; 0.0, 0.0),
+
+            depth: Meters(0.0),
+        }
+    }
+}
+
+pub trait Renderer {
+    // Send `verts` to the GPU and get ready to render sprites from it (i.e. bind buffers and use
+    // programs, etc...)
+    fn prepare(&self, verts: &[SpriteVertex]);
+
+    fn render<'x>(&mut self, grp: RenderGroup<'x>);
 }
 
 macro_rules! attrib_offset {
@@ -170,53 +183,263 @@ macro_rules! attrib_offset {
     })
 }
 
-impl Renderer {
+pub struct RenderGroup<'x> {
+    first: usize,
+    count: usize,
+    sheet: &'x Sheet,
+}
+
+/// A `Renderer` which has no instrumentation, and is designed for performance alone.
+pub struct ReleaseRenderer {
+    prog: opengl::ShaderProgram,
+    vao:  opengl::VertexArray,
+    vbo:  opengl::VertexBuffer,
+}
+
+impl ReleaseRenderer {
     /// Create a new `sprite::Renderer`. This compiles and links a shader program, so it should only
     /// be called after OpenGL has been initialized.
     #[allow(non_snake_case)]
-    pub fn new() -> Result<Renderer, Error> {
+    pub fn new() -> Result<ReleaseRenderer, Error> {
         let vtx = try!(opengl::Shader::new_vertex(include_str!("shaders/sprite.vtx")));
         let geo = try!(opengl::Shader::new_geometry(include_str!("shaders/sprite.geo")));
         let frg = try!(opengl::Shader::new_fragment(include_str!("shaders/sprite.frg")));
 
-        let prog = try!(opengl::ShaderProgram::from_shaders(&[vtx, geo, frg]));
+        let prog = try!(opengl::ShaderProgram::new(&[vtx, geo, frg]));
         prog.use_program();
 
-        // All of the attribute state will be stored in this VAO.
-        let vao = opengl::VertexArray::new();
-        vao.bind();
+        // Allow up to 16k sprites to be drawn simultaneously, this is far too many =P.
+        let vbo = opengl::VertexBuffer::new(mem::size_of::<SpriteVertex>() * MAX_SPRITES);
 
-        let screen_TL = try!(prog.get_attrib("screen_TL"));
-        let screen_BR = try!(prog.get_attrib("screen_BR"));
+        let vao = try!(setup_gl_attributes(&prog));
 
-        let tex_TL = try!(prog.get_attrib("tex_TL"));
-        let tex_BR = try!(prog.get_attrib("tex_BR"));
+        let color_tex = try!(prog.get_uniform("color_tex"));
+        let depth_tex = try!(prog.get_uniform("depth_tex"));
 
-        let depth = try!(prog.get_attrib("depth"));
+        color_tex.set1i(0);
+        depth_tex.set1i(1);
 
-        let vbo = opengl::VertexBuffer::new();
-        vbo.bind();
-
-        screen_TL.set_pointer(2, gl::FLOAT, false, mem::size_of::<SpriteVertex>(),
-            attrib_offset!(screen_TL));
-
-        screen_BR.set_pointer(2, gl::FLOAT, false, mem::size_of::<SpriteVertex>(),
-            attrib_offset!(screen_BR));
-
-        tex_TL.set_pointer(2, gl::FLOAT, false, mem::size_of::<SpriteVertex>(),
-            attrib_offset!(tex_TL));
-
-        tex_BR.set_pointer(2, gl::FLOAT, false, mem::size_of::<SpriteVertex>(),
-            attrib_offset!(tex_BR));
-
-        depth.set_pointer(1, gl::FLOAT, false, mem::size_of::<SpriteVertex>(),
-            attrib_offset!(depth));
-
-        Ok(Renderer {
+        Ok(ReleaseRenderer {
             prog: prog,
             vao:  vao,
             vbo:  vbo,
         })
+    }
+
+}
+
+impl Renderer for ReleaseRenderer {
+    fn prepare(&self, verts: &[SpriteVertex]) {
+        self.vbo.buffer_data(verts);
+
+        self.prog.use_program();
+
+        self.vao.bind();
+
+        self.vbo.bind();
+    }
+
+    fn render<'x>(&mut self, grp: RenderGroup<'x>) {
+        grp.sheet.color.bind_to_unit(0);
+        grp.sheet.depth.bind_to_unit(1);
+
+        unsafe {
+            gl::DrawArrays(gl::POINTS, grp.first as GLint, grp.count as GLsizei);
+        }
+    }
+}
+
+/// A `Renderer` which has no instrumentation, and is designed for performance alone.
+pub struct DebugRenderer {
+    // A shader program which only runs the vertex shader, for transform feedback.
+    vtx_prog: opengl::ShaderProgram,
+    vtx_vao:  opengl::VertexArray,
+
+    // Transform feedback buffer that will capture the output of the vertex shader.
+    vtx_xfb: opengl::TransformFeedback<SpriteVertex>,
+
+    // A shader program which only runs the vertex and geometry shaders, for transform feedback.
+    geo_prog: opengl::ShaderProgram,
+    geo_vao:  opengl::VertexArray,
+
+    // Transform feedback buffer that will capture the output of the geometry shader.
+    geo_xfb: opengl::TransformFeedback<SpriteVertex>,
+
+    // A shader program which does the whole render.
+    full_prog: opengl::ShaderProgram,
+    full_vao:  opengl::VertexArray,
+
+    vbo: opengl::VertexBuffer,
+}
+
+impl DebugRenderer {
+    /// Create a new `sprite::Renderer`. This compiles and links a shader program, so it should only
+    /// be called after OpenGL has been initialized.
+    #[allow(non_snake_case)]
+    pub fn new() -> Result<DebugRenderer, Error> {
+
+        // Allow up to 16k sprites to be drawn simultaneously, this is far too many =P.
+        let vbo = opengl::VertexBuffer::new(mem::size_of::<SpriteVertex>() * MAX_SPRITES);
+
+        let vtx_names: &[&str] = &[
+            "FromVert.screen_TL",
+            "FromVert.screen_BR",
+            "FromVert.tex_TL",
+            "FromVert.tex_BR",
+            "FromVert.depth",
+        ];
+
+        let vtx = try!(opengl::Shader::new_vertex(include_str!("shaders/sprite.vtx")));
+
+        let vtx_prog = try!(opengl::ShaderProgram::new_xfb(&[vtx], vtx_names));
+        
+        let vtx_xfb = opengl::TransformFeedback::new(MAX_SPRITES, SpriteVertex::zero());
+
+        vbo.bind();
+        let vtx_vao = try!(setup_gl_attributes(&vtx_prog));
+
+        let vtx = try!(opengl::Shader::new_vertex(include_str!("shaders/sprite.vtx")));
+        let geo = try!(opengl::Shader::new_geometry(include_str!("shaders/sprite.geo")));
+
+        let geo_prog = try!(opengl::ShaderProgram::new(&[vtx, geo]));
+
+        // Each input vertex gets turned into a rectangle consisting of two triangles, so there will
+        // be a total of 6 vertices per-sprite output by the geometry shader.
+        let geo_xfb = opengl::TransformFeedback::new(MAX_SPRITES * 6, SpriteVertex::zero());
+
+        vbo.bind();
+        let geo_vao = try!(setup_gl_attributes(&geo_prog));
+
+        let vtx = try!(opengl::Shader::new_vertex(include_str!("shaders/sprite.vtx")));
+        let geo = try!(opengl::Shader::new_geometry(include_str!("shaders/sprite.geo")));
+        let frg = try!(opengl::Shader::new_fragment(include_str!("shaders/sprite.frg")));
+
+        let full_prog = try!(opengl::ShaderProgram::new(&[vtx, geo, frg]));
+
+        vbo.bind();
+        let full_vao = try!(setup_gl_attributes(&full_prog));
+
+        let color_tex = try!(full_prog.get_uniform("color_tex"));
+        let depth_tex = try!(full_prog.get_uniform("depth_tex"));
+
+        color_tex.set1i(0);
+        depth_tex.set1i(1);
+
+        Ok(DebugRenderer {
+            vtx_prog: vtx_prog,
+            vtx_vao:  vtx_vao,
+
+            vtx_xfb: vtx_xfb,
+
+            geo_prog: geo_prog,
+            geo_vao:  geo_vao,
+
+            geo_xfb: geo_xfb,
+
+            full_prog: full_prog,
+            full_vao:  full_vao,
+
+            vbo: vbo,
+        })
+    }
+
+}
+
+// This function will set up the OpenGL Vertex Attributes for the standard sprite shader program.
+// It is here as a convenience function, since this is common to the Debug and Release renderers.
+fn setup_gl_attributes(prog: &opengl::ShaderProgram) -> Result<opengl::VertexArray, Error> {
+    #![allow(non_snake_case)]
+
+    // All of the attribute state will be stored in this VAO.
+    let vao = opengl::VertexArray::new();
+    vao.bind();
+
+    prog.use_program();
+
+    let screen_TL = try!(prog.get_attrib("screen_TL"));
+    screen_TL.enable();
+    screen_TL.set_pointer(2, gl::FLOAT, false, mem::size_of::<SpriteVertex>(),
+        attrib_offset!(screen_TL));
+
+    let screen_BR = try!(prog.get_attrib("screen_BR"));
+    screen_BR.enable();
+    screen_BR.set_pointer(2, gl::FLOAT, false, mem::size_of::<SpriteVertex>(),
+        attrib_offset!(screen_BR));
+
+    let tex_TL = try!(prog.get_attrib("tex_TL"));
+    tex_TL.enable();
+    tex_TL.set_pointer(2, gl::FLOAT, false, mem::size_of::<SpriteVertex>(),
+        attrib_offset!(tex_TL));
+
+    let tex_BR = try!(prog.get_attrib("tex_BR"));
+    tex_BR.enable();
+    tex_BR.set_pointer(2, gl::FLOAT, false, mem::size_of::<SpriteVertex>(),
+        attrib_offset!(tex_BR));
+
+    let depth = try!(prog.get_attrib("depth"));
+    depth.enable();
+    depth.set_pointer(1, gl::FLOAT, false, mem::size_of::<SpriteVertex>(),
+        attrib_offset!(depth));
+
+    Ok(vao)
+}
+
+impl Renderer for DebugRenderer {
+    fn prepare(&self, verts: &[SpriteVertex]) {
+        println!("buffering data: {:?}", verts);
+        self.vbo.buffer_data(verts);
+        self.vbo.bind();
+    }
+
+    /// Render the sprites, as well as printing the output of the vertex and geometry shaders to
+    /// stdout.
+    fn render<'x>(&mut self, grp: RenderGroup<'x>) {
+        grp.sheet.color.bind_to_unit(0);
+        grp.sheet.depth.bind_to_unit(1);
+
+        self.vtx_prog.use_program();
+        self.vtx_vao.bind();
+        self.vtx_xfb.bind();
+
+        unsafe {
+            gl::Enable(gl::RASTERIZER_DISCARD);
+            gl::BeginTransformFeedback(gl::POINTS);
+            gl::DrawArrays(gl::POINTS, grp.first as GLint, grp.count as GLsizei);
+            gl::EndTransformFeedback();
+            gl::Flush();
+        }
+
+        let xfb_slice = self.vtx_xfb.read();
+
+        println!("slice len: {}", xfb_slice.len());
+        println!("# vertex shader output ({} verts):", grp.count);
+        for vtx in xfb_slice.iter().take(grp.count) {
+            println!("{:?}", vtx);
+        }
+
+        self.geo_prog.use_program();
+        self.geo_vao.bind();
+        self.geo_xfb.bind();
+
+        unsafe {
+            gl::BeginTransformFeedback(gl::TRIANGLES);
+            gl::DrawArrays(gl::POINTS, grp.first as GLint, grp.count as GLsizei);
+            gl::EndTransformFeedback();
+            gl::Flush();
+        }
+
+        println!("# geometry shader output ({} sprites):", grp.count);
+        for prim in self.geo_xfb.read().chunks(6).take(grp.count) {
+            println!("{:?} {:?} {:?} {:?}", prim[0], prim[1], prim[2], prim[5]);
+        }
+
+        self.full_prog.use_program();
+        self.full_vao.bind();
+
+        unsafe {
+            gl::Disable(gl::RASTERIZER_DISCARD);
+            gl::DrawArrays(gl::POINTS, grp.first as GLint, grp.count as GLsizei);
+        }
     }
 }
 
@@ -305,8 +528,8 @@ impl DrawReq {
             screen_TL: cam.screen_to_ndu(screen_TL_px),
             screen_BR: cam.screen_to_ndu(screen_BR_px),
 
-            tex_TL: tex_TL,
-            tex_BR: tex_BR,
+            tex_TL: vec2!(tex_TL.x, Float::one() - tex_TL.y),
+            tex_BR: vec2!(tex_BR.x, Float::one() - tex_BR.y),
 
             depth: depth,
         }
@@ -315,17 +538,15 @@ impl DrawReq {
 
 /// The `Batcher` gathers the set of sprites that need to be drawn each frame and aggregates them
 /// into a smaller number of GL draw calls.
-pub struct Batcher<'x> {
+pub struct Batcher {
     by_sheet: Vec<Vec<DrawReq>>,
-    renderer: &'x Renderer,
 }
 
-impl<'x> Batcher<'x> {
+impl Batcher {
     /// Return a batcher which will use the given renderer.
-    pub fn new(r: &'x Renderer) -> Batcher<'x> {
+    pub fn new() -> Batcher {
         Batcher {
             by_sheet: vec![],
-            renderer: r,
         }
     }
 
@@ -340,13 +561,7 @@ impl<'x> Batcher<'x> {
 
     /// Render all `DrawReq`s which have been passed to this `Batcher`. In addition to causing them
     /// to be rendered, this will also leave the `Batcher` clear for the next frame.
-    pub fn render_batch(&mut self, db: &Database, cam: &Camera) {
-        struct RenderGroup<'x> {
-            first: usize,
-            count: usize,
-            sheet: &'x Sheet,
-        }
-
+    pub fn render_batch<R: Renderer>(&mut self, r: &mut R, db: &Database, cam: &Camera) {
 
         let mut verts  = vec![];
         let mut groups = vec![];
@@ -364,23 +579,15 @@ impl<'x> Batcher<'x> {
             });
 
             for req in reqs.iter() {
-                verts.push(req.to_vertex(cam, sheet))
+                let vert = req.to_vertex(cam, sheet);
+                verts.push(vert);
             }
         }
 
-        self.renderer.vbo.buffer_stream(&verts);
-
-        self.renderer.prog.use_program();
-
-        self.renderer.vao.bind();
+        r.prepare(&verts);
 
         for g in groups {
-            g.sheet.color.bind_to_unit(0);
-            g.sheet.depth.bind_to_unit(0);
-
-            unsafe {
-                gl::DrawArrays(gl::POINTS, g.first as GLint, g.count as GLsizei);
-            }
+            r.render(g)
         }
 
         for v in self.by_sheet.iter_mut() {
@@ -401,8 +608,11 @@ pub enum Error {
     /// Error linking a shader program.
     LinkError(opengl::LinkError),
 
-    /// The engine and the shaders disagree about the name of an attribute.
+    /// The engine and the shaders disagree about the name of a vertex attribute.
     NoSuchActiveAttrib(String),
+
+    /// The engine and the shaders disagree about the name of a uniform.
+    NoSuchActiveUniform(String),
 }
 
 impl FromError<opengl::CompileError> for Error {
@@ -421,6 +631,14 @@ impl FromError<opengl::NoSuchActiveAttrib> for Error {
     fn from_error(err: opengl::NoSuchActiveAttrib) -> Error {
         match err {
             opengl::NoSuchActiveAttrib(id) => Error::NoSuchActiveAttrib(id),
+        }
+    }
+}
+
+impl FromError<opengl::NoSuchActiveUniform> for Error {
+    fn from_error(err: opengl::NoSuchActiveUniform) -> Error {
+        match err {
+            opengl::NoSuchActiveUniform(id) => Error::NoSuchActiveUniform(id),
         }
     }
 }
