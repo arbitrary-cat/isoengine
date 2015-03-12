@@ -56,9 +56,9 @@ impl Camera {
         let y_rot: f32 = 00.0f32;
         let z_rot: f32 = (-45.0f32).to_radians();
 
-        let (c1, s1) = x_rot.sin_cos();
-        let (c2, s2) = y_rot.sin_cos();
-        let (c3, s3) = z_rot.sin_cos();
+        let (s1, c1) = x_rot.sin_cos();
+        let (s2, c2) = y_rot.sin_cos();
+        let (s3, c3) = z_rot.sin_cos();
 
         // This is the formula given by Wikipedia for turning XYZ Euler Angles into a 3D rotation
         // matrix.
@@ -78,13 +78,14 @@ impl Camera {
     }
 
     /// Convert a camera-space coordinate to a screen coordinate, quantized to pixels. The `z'
-    /// component of `cam` is returned on its own.
+    /// component of `cam` is returned negated, so that a larger value indicates a position further
+    /// in front of the camera (usable as a depth value).
     #[inline]
     pub fn camera_to_screen(&self, cam: math::Vec3<Meters>) -> (math::Vec2<Pixels>, Meters) {
         let x_px = Pixels(cam.x.0 * self.scale).floor();
         let y_px = Pixels(cam.y.0 * self.scale).floor();
 
-        (vec2!(x_px, y_px), cam.z)
+        (vec2!(x_px, y_px), -cam.z)
     }
 
     /// Convert a game-screen coordinate to NDU.
