@@ -402,6 +402,7 @@ impl ShaderProgram {
             let log = String::from_utf8(log_buf)
                 .unwrap_or(String::from_str("Info log was not valid utf-8"));
 
+            return Err(LinkError{info_log: log});
         }
 
         Ok(())
