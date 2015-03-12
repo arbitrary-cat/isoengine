@@ -21,7 +21,47 @@ mod vector3d;
 pub use grafix::math::vector2d::Vec2;
 pub use grafix::math::vector3d::Vec3;
 
+#[macro_export]
+/// Create a `Vec2` from components. This macro takes an optional conversion parameter which must be
+/// a function. It will be applied to each element of the vector before construction.
+///
+/// ```rust
+///    #[macro_use]
+///    extern crate isoengine;
+///
+///    use std::num::Float;
+///    use isoengine::grafix::math::Vec2;
+///
+///    fn main() {
+///        let v:     Vec2<f32> = vec2!(1.0, 1.0);
+///        let sqrts: Vec2<f32> = vec2!(|x: f32| x.sqrt() ; 4.0, 5.0);
+///    }
+/// ```
 macro_rules! vec2 {
     ( $x:expr , $y:expr , ) => (vec2!($x, $y));
-    ( $x:expr , $y:expr ) => ($crate::grafix::math::Vec2 { x: $x, y: $y });
+
+
+    ( $x:expr , $y:expr ) => ($crate::grafix::math::Vec2{ x: $x, y: $y });
+
+    ( $conv:expr ; $x:expr , $y:expr , ) => (vec2!($conv ; $x, $y));
+
+    ( $conv:expr ; $x:expr , $y:expr ) => ( $crate::grafix::math::Vec2 {
+        x: $conv($x),
+        y: $conv($y),
+    });
+}
+
+#[macro_export]
+macro_rules! vec3 {
+    ( $x:expr , $y:expr , $z:expr , ) => (vec3!($x, $y, $z));
+
+    ( $x:expr , $y:expr , $z:expr ) => ($crate::grafix::math::Vec3{ x: $x, y: $y, z: $z });
+
+    ( $conv:expr ; $x:expr , $y:expr , $z:expr , ) => (vec3!($conv ; $x, $y, $z));
+
+    ( $conv:expr ; $x:expr , $y:expr , $z:expr ) => ( $crate::grafix::math::Vec3 {
+        x: $conv($x),
+        y: $conv($y),
+        z: $conv($z),
+    });
 }
