@@ -26,6 +26,8 @@ use std::ops::{Add, Sub, Mul, Div};
 /// convenient **as long as you realize it's happening**, so be careful! All of the methods are
 /// commented to describe how the arguments are transformed, so there will be no surprises as long
 /// as you read the docs.
+///
+/// A Duration has a maximum value of around 35 million years.
 #[derive(Copy,Clone,Debug,PartialEq,Eq,PartialOrd,Ord)]
 pub struct Duration {
     μs: u64,
