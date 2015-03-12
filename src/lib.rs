@@ -15,7 +15,7 @@
 // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#![feature(collections, core, old_path, std_misc)]
+#![feature(collections, core, non_ascii_idents, old_path, std_misc)]
 
 #![warn(missing_docs)]
 
@@ -30,6 +30,9 @@ extern crate mkprim;
 
 /// High-level graphics abstractions built on top of OpenGL.
 pub mod grafix;
+
+/// Abstractions for dealing with time.
+pub mod time;
 
 use grafix::opengl;
 
