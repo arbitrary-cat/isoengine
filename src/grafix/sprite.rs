@@ -15,8 +15,6 @@
 // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#![allow(dead_code)]
-
 use std::collections::HashMap;
 use std::error::FromError;
 use std::mem;
@@ -72,9 +70,6 @@ pub struct SheetDesc {
 
 /// A sprite sheet.
 pub struct Sheet {
-    // Dimensions of the whole image.
-    img_dimens: math::Vec2<Pixels>,
-
     // Position of a sprite's origin as a ratio of width and height.
     origin: math::Vec2<Pixels>,
 
@@ -84,13 +79,9 @@ pub struct Sheet {
     // Dimensions of a sprite in texture coordinates (i.e. as a ration of the whole image's size).
     tex_dimens: math::Vec2<TexCoord>,
 
-    // Number of sprites in each row/column of the sheet. There may be 'slack' along the right side
-    // or bottom of the texture, if `scr_dimens` doesn't evenly divide `img_dimens`.
+    // Number of sprites in each row of the sheet. There may be 'slack' along the right side
+    // or bottom of the texture, if the sprites don't fit the texture perfectly.
     num_across: usize,
-    num_down:   usize,
-
-    // Number of sprites in the sheet (num_across * (num_down - 1) < total <= num_across * num_down)
-    total: usize,
 
     // RGBA texture which gives the sprite its color.
     color: opengl::Tex2D,
@@ -110,11 +101,6 @@ impl Sheet {
         let depth_png = try!(png::load_png(&depth_path).map_err(Error::PngError));
 
         Ok( Sheet {
-            img_dimens: vec2!(Pixels ;
-                desc.img_width as f32,
-                desc.img_height as f32,
-            ),
-
             origin: vec2!(Pixels ; desc.origin_x as f32, desc.origin_y as f32),
 
             scr_dimens: vec2!(Pixels ; desc.spr_width as f32, desc.spr_height as f32),
@@ -125,9 +111,6 @@ impl Sheet {
             ),
 
             num_across: desc.num_across as usize,
-            num_down:   desc.num_down as usize,
-
-            total: desc.total as usize,
 
             color: opengl::Tex2D::from_png(&color_png),
             depth: opengl::Tex2D::from_png(&depth_png),
