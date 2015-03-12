@@ -274,6 +274,9 @@ pub struct TransformFeedback<T: Clone>{
 }
 
 impl<T: Clone> TransformFeedback<T> {
+
+    /// Create a new TransformFeedback buffer with room for `count` vertices. Initialize each of
+    /// these vertices with `init` in main memory (but not on the GPU).
     pub fn new(count: usize, init: T) -> TransformFeedback<T> {
         let gl_xfb = unsafe {
             let mut gl_xfb = 0;

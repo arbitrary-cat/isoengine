@@ -139,21 +139,26 @@ impl Sheet {
 #[allow(non_snake_case)]
 #[derive(Debug,Copy,Clone)]
 pub struct SpriteVertex {
-    // Corners of the sprite
-    screen_TL: math::Vec2<NDU>,
-    screen_BR: math::Vec2<NDU>,
+    /// The top-left of the sprite in screen-coordinates
+    pub screen_TL: math::Vec2<NDU>,
 
-    // Corners of the texture
-    tex_TL: math::Vec2<TexCoord>,
-    tex_BR: math::Vec2<TexCoord>,
+    /// The bottom-right of the sprite in screen-coordinates
+    pub screen_BR: math::Vec2<NDU>,
 
-    // Depth of the origin of the sprite from the camera. In meters, since that's the unit used in
-    // the depth texture.
-    depth: Meters,
+    /// The top-left texture coordinate.
+    pub tex_TL: math::Vec2<TexCoord>,
+
+    /// The bottom-right texture coordinate.
+    pub tex_BR: math::Vec2<TexCoord>,
+
+    /// Depth of the origin of the sprite from the camera. In `Meters`, since that's the unit used
+    /// in the depth texture.
+    pub depth: Meters,
 }
 
 impl SpriteVertex {
-    fn zero() -> SpriteVertex {
+    /// Return a `SpriteVertex` with all fields set to 0.0
+    pub fn zero() -> SpriteVertex {
         SpriteVertex {
             screen_TL: vec2!(NDU ; 0.0, 0.0),
             screen_BR: vec2!(NDU ; 0.0, 0.0),
@@ -166,11 +171,14 @@ impl SpriteVertex {
     }
 }
 
+/// An abstraction around the process of rendering a sprite. The `Batcher` dispatches sprites to a
+/// `Renderer` to be drawn, and the `Renderer` is free to accomplish that however it wishes.
 pub trait Renderer {
-    // Send `verts` to the GPU and get ready to render sprites from it (i.e. bind buffers and use
-    // programs, etc...)
+    /// Send `verts` to the GPU and get ready to render sprites from it (i.e. bind buffers and use
+    /// programs, etc...)
     fn prepare(&self, verts: &[SpriteVertex]);
 
+    /// Render a `RenderGroup`.
     fn render<'x>(&mut self, grp: RenderGroup<'x>);
 }
 
@@ -183,10 +191,18 @@ macro_rules! attrib_offset {
     })
 }
 
+/// A group of sprites to be rendered at the same time. This struct only exists to be passed to the
+/// `Renderer::render` method, and references a range of sprites passed to that `Renderer` in the
+/// most recent call to `Renderer::prepare`.
 pub struct RenderGroup<'x> {
-    first: usize,
-    count: usize,
-    sheet: &'x Sheet,
+    /// The index of the first sprite to be drawn.
+    pub first: usize,
+
+    /// The number of sprites to be drawn.
+    pub count: usize,
+
+    /// The sprite sheet on which these sprites reside (this just provides the textures).
+    pub sheet: &'x Sheet,
 }
 
 /// A `Renderer` which has no instrumentation, and is designed for performance alone.
@@ -199,8 +215,8 @@ pub struct ReleaseRenderer {
 impl ReleaseRenderer {
     /// Create a new `sprite::Renderer`. This compiles and links a shader program, so it should only
     /// be called after OpenGL has been initialized.
-    #[allow(non_snake_case)]
     pub fn new() -> Result<ReleaseRenderer, Error> {
+        #![allow(non_snake_case)]
         let vtx = try!(opengl::Shader::new_vertex(include_str!("shaders/sprite.vtx")));
         let geo = try!(opengl::Shader::new_geometry(include_str!("shaders/sprite.geo")));
         let frg = try!(opengl::Shader::new_fragment(include_str!("shaders/sprite.frg")));
@@ -249,7 +265,11 @@ impl Renderer for ReleaseRenderer {
     }
 }
 
-/// A `Renderer` which has no instrumentation, and is designed for performance alone.
+/// An instrumented `Renderer` which prints the output of the vertex and geometry shaders to
+/// standard out.
+///
+/// FIXME: This doesn't actually print the output of the geometry shader yet. No good reason
+///        to implement it yet =].
 pub struct DebugRenderer {
     // A shader program which only runs the vertex shader, for transform feedback.
     vtx_prog: opengl::ShaderProgram,
@@ -273,10 +293,10 @@ pub struct DebugRenderer {
 }
 
 impl DebugRenderer {
-    /// Create a new `sprite::Renderer`. This compiles and links a shader program, so it should only
-    /// be called after OpenGL has been initialized.
-    #[allow(non_snake_case)]
+    /// Create a new `sprite::DebugRenderer`. This compiles and links a shader program, so it should
+    /// only be called after OpenGL has been initialized.
     pub fn new() -> Result<DebugRenderer, Error> {
+        #![allow(non_snake_case)]
 
         // Allow up to 16k sprites to be drawn simultaneously, this is far too many =P.
         let vbo = opengl::VertexBuffer::new(mem::size_of::<SpriteVertex>() * MAX_SPRITES);
