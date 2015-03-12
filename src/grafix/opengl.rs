@@ -345,9 +345,39 @@ impl ShaderProgram {
         }))
     }
 
+    /// Link several `Shader`s into a `ShaderProgram`, capturing the given attributes in a transform
+    /// feedback buffer.
+    pub fn new_xfb(shaders: &[Shader], xfb_attrs: &[&str]) -> Result<ShaderProgram, LinkError> {
 
+        Ok( ShaderProgram( unsafe {
+            let gl_prog = trace!(gl::CreateProgram());
 
+            for s in shaders.iter() {
+                // Attach shaders for linking.
+                trace!(gl::AttachShader(gl_prog, s.0));
+            }
 
+            let cstr_xfb_attrs: Vec<ffi::CString> = xfb_attrs.iter()
+                .map(|&rstr| ffi::CString::new(rstr).unwrap())
+                .collect();
+
+            let cptr_xfb_attrs: Vec<*const GLchar> = cstr_xfb_attrs.iter()
+                .map(|cstr| cstr.as_ptr())
+                .collect();
+
+            trace!(gl::TransformFeedbackVaryings(gl_prog, cptr_xfb_attrs.len() as GLsizei,
+                cptr_xfb_attrs.as_ptr(), gl::INTERLEAVED_ATTRIBS));
+
+            try!(ShaderProgram::link(gl_prog));
+
+            for s in shaders.iter() {
+                // Detach shaders so they can be deleted.
+                trace!(gl::DetachShader(gl_prog, s.0))
+            }
+
+            gl_prog
+        }))
+    }
 
     unsafe fn link(gl_prog: GLuint) -> Result<(), LinkError> {
 
