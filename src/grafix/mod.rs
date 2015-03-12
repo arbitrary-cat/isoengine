@@ -25,6 +25,9 @@ pub mod math;
 /// Sprite-drawing interface built on top of the `grafix::opengl` module.
 pub mod sprite;
 
+/// Sprite-based animations.
+pub mod anim;
+
 /// Types for working with relationships between screen-space and game-space.
 pub mod camera;
 
