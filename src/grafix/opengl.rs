@@ -481,10 +481,20 @@ impl Drop for VertexArray {
 pub struct VertexBuffer(GLuint);
 
 impl VertexBuffer {
-    /// Generate a new `VertexBuffer`.
-    pub fn new() -> VertexBuffer {
+    /// Generate a new `VertexBuffer` and allocate `size` bytes of storage on the GPU. The buffer
+    /// will be created with the `STREAM_DRAW` usage constant.
+    pub fn new(size: usize) -> VertexBuffer {
         let mut gl_vbo = 0;
-        unsafe { trace!(gl::GenBuffers(1, &mut gl_vbo)) }
+        unsafe {
+            trace!(gl::GenBuffers(1, &mut gl_vbo));
+            trace!(gl::BindBuffer(gl::ARRAY_BUFFER, gl_vbo));
+            trace!(gl::BufferData(
+                gl::ARRAY_BUFFER,
+                size as GLsizeiptr,
+                ptr::null(),
+                gl::STREAM_DRAW,
+            ));
+        }
 
         VertexBuffer(gl_vbo)
     }
@@ -495,33 +505,21 @@ impl VertexBuffer {
         unsafe { trace!(gl::BindBuffer(gl::ARRAY_BUFFER, self.0)) }
     }
 
-    /// Load data into the buffer that will be written only once. This calls `glBufferData` with the
-    /// `STATIC_DRAW` usage constant.
-    pub fn buffer_static<T>(&self, data: &[T]) {
+    /// Load data into the buffer, it must not be larger than the size of the buffer.
+    pub fn buffer_data<T>(&self, data: &[T]) {
         unsafe {
             trace!(gl::BindBuffer(gl::ARRAY_BUFFER, self.0));
-            trace!(gl::BufferData(
+            trace!(gl::BufferSubData(
                 gl::ARRAY_BUFFER,
+                0, // Offset is always 0.
                 (mem::size_of::<T>() * data.len()) as GLsizeiptr,
                 data.as_ptr() as *const GLvoid,
-                gl::STATIC_DRAW,
             ));
         }
     }
 
-    /// Load data into the buffer that will be written very frequently. This calls `glBufferData`
-    /// with the `STREAM_DRAW` usage constant.
-    pub fn buffer_stream<T>(&self, data: &[T]) {
-        unsafe {
-            trace!(gl::BindBuffer(gl::ARRAY_BUFFER, self.0));
-            trace!(gl::BufferData(
-                gl::ARRAY_BUFFER,
-                (mem::size_of::<T>() * data.len()) as GLsizeiptr,
-                data.as_ptr() as *const GLvoid,
-                gl::STREAM_DRAW,
-            ));
-        }
-    }
+    /// Get the OpenGL name of this buffer.
+    pub fn dbg_name(&self) -> GLint { self.0 as GLint }
 }
 
 impl Drop for VertexBuffer {
