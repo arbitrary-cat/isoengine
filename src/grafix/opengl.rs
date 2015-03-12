@@ -266,6 +266,59 @@ impl Drop for Shader {
     }
 }
 
+/// A TransformFeedback buffer, at the moment this is just intended for debugging purposes. I don't
+/// see them being very useful for anything else in a 2D isometric engine.
+pub struct TransformFeedback<T: Clone>{
+    name: GLuint,
+    data: Vec<T>
+}
+
+impl<T: Clone> TransformFeedback<T> {
+    pub fn new(count: usize, init: T) -> TransformFeedback<T> {
+        let gl_xfb = unsafe {
+            let mut gl_xfb = 0;
+
+            trace!(gl::GenBuffers(1, &mut gl_xfb));
+
+            trace!(gl::BindBuffer(gl::ARRAY_BUFFER, gl_xfb));
+
+            trace!(gl::BufferData(
+                gl::ARRAY_BUFFER,
+                (mem::size_of::<T>() * count) as GLsizeiptr,
+                ptr::null(),
+                gl::STATIC_READ
+            ));
+
+            gl_xfb
+        };
+
+        TransformFeedback {
+            name: gl_xfb,
+            data: iter::repeat(init).take(count).collect(),
+        }
+    }
+
+    /// Read the contents of the buffer into main memory and a reference to them. This buffer must
+    /// be bound before calling read.
+    pub fn read<'x>(&'x mut self) -> &'x [T] {
+        unsafe {
+            trace!(gl::GetBufferSubData(
+                gl::TRANSFORM_FEEDBACK_BUFFER,
+                0,
+                (mem::size_of::<T>() * self.data.len()) as GLsizeiptr,
+                self.data.as_ptr() as *mut GLvoid
+            ));
+        }
+
+        &self.data
+    }
+
+    /// Bind this buffer to `TRANSFORM_FEEDBACK_BUFFER`.
+    pub fn bind(&self) {
+        unsafe { trace!(gl::BindBufferBase(gl::TRANSFORM_FEEDBACK_BUFFER, 0, self.name)) }
+    }
+}
+
 /// A linked OpenGL shader program object.
 pub struct ShaderProgram(GLuint);
 
