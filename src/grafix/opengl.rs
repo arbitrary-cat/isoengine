@@ -556,6 +556,13 @@ impl VertexAttrib {
     pub fn enable(&self) {
         unsafe { trace!(gl::EnableVertexAttribArray(self.0)) }
     }
+
+    /// Returns the name of the buffer object currently bound to this attributes binding point.
+    pub fn dbg_buffer_binding(&self) -> GLint {
+        let mut gl_name = 0;
+        unsafe { gl::GetVertexAttribiv(self.0, gl::VERTEX_ATTRIB_ARRAY_BUFFER_BINDING, &mut gl_name) }
+        gl_name
+    }
 }
 
 /// Error returned to indicate that the requested attribute does not exist (or that the user has
