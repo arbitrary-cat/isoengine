@@ -16,7 +16,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 use std::num::Float;
-use std::ops::{Add, Sub, Mul, Div};
+use std::ops::{Add, Sub, Mul, Div, Rem};
 
 /// A period of time, measured at microsecond granularity. Duratons are unsigned, there is no such
 /// thing as a negative duration.
@@ -95,5 +95,15 @@ impl Mul<Duration> for f64 {
     fn mul(self, rhs: Duration) -> Duration {
         // Defer to the preceding implementation.
         rhs * self
+    }
+}
+
+impl Rem for Duration {
+    type Output = Duration;
+
+    /// Return the remainder of `self` beyond the nearest integer multiple (possibly 0) of `rhs`
+    /// which is less than `self`.
+    fn rem(self, rhs: Duration) -> Duration {
+        Duration { μs: self.μs % rhs.μs }
     }
 }
