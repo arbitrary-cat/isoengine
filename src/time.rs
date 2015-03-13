@@ -41,7 +41,7 @@ impl Duration {
 
     /// Create a duration from a given number of milliseconds.
     pub fn msec(ms: u64) -> Duration {
-        Duration { μs: ms * 1_000_000 }
+        Duration { μs: ms * 1_000 }
     }
 
     /// Create a duration from a given number of microseconds.
