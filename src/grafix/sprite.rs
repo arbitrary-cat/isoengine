@@ -521,8 +521,8 @@ impl DrawReq {
         let row_coef = TexCoord((self.sprite_idx / sheet.num_across) as f32);
         let col_coef = TexCoord((self.sprite_idx % sheet.num_across) as f32);
 
-        let tex_TL = vec2!(row_coef, col_coef) * sheet.tex_dimens;
-        let tex_BR = vec2!(row_coef + Float::one(), col_coef + Float::one()) * sheet.tex_dimens;
+        let tex_TL = vec2!(col_coef + Float::one(), row_coef) * sheet.tex_dimens;
+        let tex_BR = vec2!(col_coef, row_coef + Float::one()) * sheet.tex_dimens;
 
         let screen_TL_px = scr_loc - sheet.origin;
         let screen_BR_px = screen_TL_px + sheet.scr_dimens;
@@ -531,8 +531,8 @@ impl DrawReq {
             screen_TL: cam.screen_to_ndu(screen_TL_px),
             screen_BR: cam.screen_to_ndu(screen_BR_px),
 
-            tex_TL: vec2!(tex_TL.x, Float::one() - tex_TL.y),
-            tex_BR: vec2!(tex_BR.x, Float::one() - tex_BR.y),
+            tex_TL: vec2!(Float::one() - tex_TL.x, Float::one() - tex_TL.y),
+            tex_BR: vec2!(Float::one() - tex_BR.x, Float::one() - tex_BR.y),
 
             depth: depth,
         }
