@@ -93,4 +93,9 @@ impl<'x> Instance<'x> {
             game_loc:   self.loc_start + self.disp.scaled(Meters(interp as f32)),
         }
     }
+
+    /// Return the time at which this instance will end.
+    pub fn end_time(&self) -> time::Duration {
+        self.t_start + self.dur
+    }
 }
