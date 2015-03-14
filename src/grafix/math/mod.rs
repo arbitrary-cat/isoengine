@@ -52,6 +52,21 @@ macro_rules! vec2 {
 }
 
 #[macro_export]
+/// Create a `Vec3` from components. This macro takes an optional conversion parameter which must be
+/// a function. It will be applied to each element of the vector before construction.
+///
+/// ```rust
+///    #[macro_use]
+///    extern crate isoengine;
+///
+///    use std::num::Float;
+///    use isoengine::grafix::math::Vec3;
+///
+///    fn main() {
+///        let v:     Vec3<f32> = vec3!(1.0, 2.0, 3.0);
+///        let sqrts: Vec3<f32> = vec3!(|x: f32| x.sqrt() ; 4.0, 5.0, 6.0);
+///    }
+/// ```
 macro_rules! vec3 {
     ( $x:expr , $y:expr , $z:expr , ) => (vec3!($x, $y, $z));
 
