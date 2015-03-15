@@ -29,6 +29,7 @@ extern crate sdl2;
 extern crate mkprim;
 
 /// High-level graphics abstractions built on top of OpenGL.
+#[macro_use]
 pub mod grafix;
 
 /// Abstractions for dealing with time.
