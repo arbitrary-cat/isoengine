@@ -35,6 +35,9 @@ pub mod grafix;
 /// Abstractions for dealing with time.
 pub mod time;
 
+/// The scene abstraction which arranges entities and effects on the map.
+pub mod scene;
+
 use grafix::opengl;
 
 /// A RAII handle for the whole engine. Once this baby leaves scope, it's curtains.
