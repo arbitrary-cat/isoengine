@@ -19,13 +19,14 @@ use std::num::Float;
 use std::ops::{Add, Sub, Mul, Div, Rem};
 
 /// A period of time, measured at microsecond granularity. Duratons are unsigned, there is no such
-/// thing as a negative duration.
+/// thing as a negative duration. It is implemented as a 64-bit number of microseconds, the struct
+/// is cheap to pass around by value.
 ///
 /// The mathematical operations defined on `Duration` are a bit peculiar in that they will take the
 /// absolute value of any negative input or result, so that the output is always positive. This is
 /// convenient **as long as you realize it's happening**, so be careful! All of the methods are
-/// commented to describe how the arguments are transformed, so there will be no surprises as long
-/// as you read the docs.
+/// commented to describe how the arguments are transformed, so there will be no surprises *provided
+/// that you read the docs*.
 ///
 /// A Duration has a maximum value of around 35 million years.
 #[derive(Copy,Clone,Debug,PartialEq,Eq,PartialOrd,Ord)]
@@ -48,6 +49,15 @@ impl Duration {
     pub fn μsec(μs: u64) -> Duration {
         Duration { μs: μs }
     }
+
+    /// Return the duration as an integer number of seconds.
+    pub fn as_sec(self) -> u64 { self.μs / 1_000_000 }
+
+    /// Return the duration as an integer number of milliseconds.
+    pub fn as_msec(self) -> u64 { self.μs / 1_000 }
+
+    /// Return the duration as an integer number of microseconds.
+    pub fn as_μsec(self) -> u64 { self.μs }
 }
 
 impl Add for Duration {
