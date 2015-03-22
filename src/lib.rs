@@ -25,8 +25,13 @@ extern crate gl;
 extern crate png;
 extern crate sdl2;
 
+extern crate core;
+
 #[macro_use]
 extern crate mkprim;
+
+#[macro_use]
+extern crate bitflags;
 
 /// High-level graphics abstractions built on top of OpenGL.
 #[macro_use]

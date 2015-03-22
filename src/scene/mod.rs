@@ -17,3 +17,6 @@
 
 /// The entity component system.
 pub mod entity;
+
+/// An octree for spatial partitioning.
+pub mod octree;
