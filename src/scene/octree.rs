@@ -138,7 +138,8 @@ impl<T> LooseOctree<T> {
             //  1. `bcube` is too small for the node, and needs to go in a child node.
             //  2. `bcube` is too big for this node, and needs to go in a parent node.
             //  3. `bcube` "fits" in this node, and so we just return this node's ID.
-            Some(octant) => if node_bcube.half_edge / Meters(2.0) > bcube.half_edge {
+            Some(octant) => if node_bcube.half_edge / Meters(2.0) > bcube.half_edge
+                            && node_bcube.half_edge < self.min_dist {
                 // Case 1: recurse on a child node.
                 let child = self.get_child(id, octant);
 
