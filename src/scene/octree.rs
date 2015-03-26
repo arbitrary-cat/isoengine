@@ -53,6 +53,27 @@ pub struct LooseOctree<T> {
 }
 
 impl<T> LooseOctree<T> {
+    /// Create a new octree with an initial root node containing the given bounding box, and which
+    /// will never produce a node less than half of `min` meters to a side.
+    pub fn new(initial: BoundingCube, min: Meters) -> LooseOctree<T> {
+        let mut octree = LooseOctree {
+            root:     NodeID(unsafe { NonZero::new(!0) }),
+            nodes:    vec![],
+            entries:  vec![],
+            min_dist: min,
+        };
+
+        octree.root = octree.new_node(Node {
+            bcube:    initial,
+            octant:   S0,
+            parent:   None,
+            children: [None; 8],
+            contents: vec![],
+        });
+
+        octree
+     }
+
     // Create a new node within the tree.
     #[inline] fn new_node(&mut self, n: Node) -> NodeID {
         let idx = self.nodes.len() as u32;
