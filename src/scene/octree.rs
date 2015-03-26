@@ -125,6 +125,36 @@ impl<T> LooseOctree<T> {
         ent_id
     }
 
+    /// Modify the location of an existing entry in the tree.
+    pub fn adjust(&mut self, ent_id: EntryID, bcube: BoundingCube) {
+        let current_node = self.entries[ent_id as usize].node;
+
+        // Get the node which *should* contain this entry.
+        let new_node = self.get_node(current_node, bcube);
+
+        if new_node != current_node {
+            self.node_by_id_mut(current_node).contents.retain(|&x| { x != ent_id });
+            self.maybe_free(current_node);
+
+            self.node_by_id_mut(new_node).contents.push(ent_id);
+            self.entries[ent_id as usize].node = new_node;
+        }
+    }
+
+    // Release a node if it has no contents and no children. Otherwise leave it unaffected.
+    fn maybe_free(&mut self, id: NodeID) {
+        if self.node_by_id(id).contents.is_empty()
+            && !self.node_by_id(id).children.iter().any(|&x| x.is_some()) {
+
+            let parent = self.node_by_id(id).parent;
+            self.free_node(id);
+
+            if let Some(parent_id) = parent {
+                self.maybe_free(parent_id);
+            }
+        }
+    }
+
     // Return the node which should contain the given bounding box. Begin the search at the node
     // referred to by `id`. This routine will allocate new nodes if necessary, and may even create a
     // new root node.
