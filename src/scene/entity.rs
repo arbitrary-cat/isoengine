@@ -47,15 +47,25 @@ pub trait Component<E> {
     fn commit(&mut self, event: &E, bus: &mut EventBus<E>);
 }
 
-/// All objects in the game world are represented as entities.
-pub struct Entity<E> {
+/// The generic entity type. In general all entities should be implementation using `GenericEntity`,
+/// however for performance reasons it might be useful to create specializations with unboxed
+/// components.
+pub trait Entity {
+    /// Process this entity, updating all components. In each frame, systems should access the
+    /// components *before* `update` is called on the entity.
+    fn update(&mut self);
+}
+
+/// An implementation of the `Entity` trait where all components are generic (a boxed
+/// `Component<E>`) and events are transmitted via a central `EventBus<E>`.
+pub struct GenericEntity<E> {
     bus:        EventBus<E>,
     components: Vec<Box<Component<E>>>
 }
 
-impl<E> Entity<E> {
+impl<E> Entity for GenericEntity<E> {
     /// Process all components of this entity.
-    pub fn update(&mut self) {
+    fn update(&mut self) {
 
         for c in self.components.iter_mut() {
             c.stage(&mut self.bus);
