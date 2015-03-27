@@ -164,13 +164,15 @@ impl<T> LooseOctree<T> {
 
     // Release a node if it has no contents and no children. Otherwise leave it unaffected.
     fn maybe_free(&mut self, id: NodeID) {
-        if self.node_by_id(id).contents.is_empty()
-            && !self.node_by_id(id).children.iter().any(|&x| x.is_some()) {
+        // We don't ever free the root node, even if it's empty.
+        if let Some(parent_id) = self.node_by_id(id).parent {
 
-            let parent = self.node_by_id(id).parent;
-            self.free_node(id);
+            // Only free the node if the node has no children and no contents.
+            if self.node_by_id(id).contents.is_empty()
+                && !self.node_by_id(id).children.iter().any(|&x| x.is_some()) {
 
-            if let Some(parent_id) = parent {
+                self.free_node(id);
+
                 self.maybe_free(parent_id);
             }
         }
