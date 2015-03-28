@@ -15,14 +15,25 @@
 // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-/// Boilerplate-reducing abstractions around OpenGL, taylored to the specific use-case of isoengine.
-pub mod opengl;
+// Workaround since we can't put doc comments inside of the mkprim! macro.
+#![allow(missing_docs)]
 
-/// Sprite-drawing interface built on top of the `grafix::opengl` module.
-pub mod sprite;
+mkprim! {
+    /// The basic unit of game space.
+    pub float Meters(pub f32);
 
-/// Sprite-based animations.
-pub mod anim;
+    /// A "logical" pixel, which may correspond to some different number of device pixels.
+    pub float Pixels(pub f32);
 
-/// Types for working with relationships between screen-space and game-space.
-pub mod camera;
+    /// The smallest unit of color that OpenGL is working with. One DevicePixel corresponds to one
+    /// fragment in the shader pipeline. It might not actually be a single pixel on the final output
+    /// device, for example if the game is running full-screen at less than native resolution.
+    pub float DevicePixels(pub f32);
+
+    /// Normalized Device Units, This is the unit that we actually send to OpenGL, and in which the
+    /// shaders think.
+    pub float NDU(pub f32);
+
+    /// A texture coordinate, in the range [0.0, 1.0].
+    pub float TexCoord(pub f32);
+}

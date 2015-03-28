@@ -19,7 +19,7 @@
 
 #![warn(missing_docs)]
 
-//! A Free and Open Source 2D isometric game engine.
+//! An Encumbered and Closed Source 2D isometric game engine.
 
 extern crate gl;
 extern crate png;
@@ -27,15 +27,19 @@ extern crate sdl2;
 
 extern crate core;
 
-#[macro_use]
-extern crate mkprim;
+#[macro_use] extern crate mkprim;
 
+#[macro_use] extern crate bitflags;
+
+/// Vector math.
 #[macro_use]
-extern crate bitflags;
+pub mod math;
+
+/// Units used throughout the engine.
+pub mod units;
 
 /// High-level graphics abstractions built on top of OpenGL.
-#[macro_use]
-pub mod grafix;
+#[macro_use] pub mod grafix;
 
 /// Abstractions for dealing with time.
 pub mod time;

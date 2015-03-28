@@ -22,8 +22,8 @@ use std::num::Float;
 
 use core::nonzero::NonZero;
 
-use grafix::math;
-use grafix::units::*;
+use math;
+use units::*;
 
 /// An EntryID identifies an object which has been inserted into a `LooseOctree`.
 pub type EntryID = u32;

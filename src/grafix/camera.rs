@@ -17,8 +17,8 @@
 
 use std::num::Float;
 
-use grafix::math;
-use grafix::units::*;
+use math;
+use units::*;
 
 /// A camera for a world with an isometric orthogonal projection. The camera knows how to translate
 /// from coordinates in the game world to OpenGL's Normalized Device Units.

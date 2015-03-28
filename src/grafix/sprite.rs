@@ -24,10 +24,10 @@ use gl;
 use gl::types::*;
 use png;
 
-use grafix::math;
 use grafix::opengl;
-use grafix::units::*;
 use grafix::camera::Camera;
+use math;
+use units::*;
 
 // The maximum number of sprites that can be drawn on-screen at any given time.
 const MAX_SPRITES: usize = 16 * 1024;
