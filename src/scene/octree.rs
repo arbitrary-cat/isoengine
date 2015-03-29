@@ -18,11 +18,10 @@
 // Until I'm done w/ the design.
 #![allow(dead_code)]
 
-use std::num::Float;
-
 use core::nonzero::NonZero;
 
 use math;
+use math::{BoundingCube,Octant,S0,SX,SY,SZ};
 use units::*;
 
 /// An EntryID identifies an object which has been inserted into a `LooseOctree`.
@@ -309,119 +308,4 @@ struct Node {
     // Indices into the `entries` field of the Octree. This field has the potential to be a
     // bottleneck, since we're going to do lots of naive linear search on it.
     contents: Vec<EntryID>,
-}
-
-
-bitflags! {
-    /// Flags for identifying octants of a cube. Why do they have the `S` prefix? Because `O0` was
-    /// weird looking, and `S` could totally stand for "segment" or "section" or something.
-    ///
-    /// This type is actually internal to the `scene::octree` module, but due to limitations of the
-    /// `bitflags!` macro, it has public visibility.
-    flags Octant: u8 {
-        const S0   = 0b000,
-        const SX   = 0b001,
-        const SY   = 0b010,
-        const SZ   = 0b100,
-        const SXY  = SX.bits | SY.bits,
-        const SXZ  = SX.bits | SZ.bits,
-        const SYZ  = SY.bits | SZ.bits,
-        const SXYZ = SX.bits | SY.bits | SZ.bits,
-    }
-}
-
-impl Octant {
-    fn as_vector(self) -> math::Vec3<Meters> {
-        match self.bits {
-            0b000 => vec3!(Meters ; -1.0, -1.0, -1.0),
-            0b100 => vec3!(Meters ;  1.0, -1.0, -1.0),
-            0b010 => vec3!(Meters ; -1.0,  1.0, -1.0),
-            0b001 => vec3!(Meters ; -1.0, -1.0,  1.0),
-            0b110 => vec3!(Meters ;  1.0,  1.0, -1.0),
-            0b101 => vec3!(Meters ;  1.0, -1.0,  1.0),
-            0b011 => vec3!(Meters ; -1.0,  1.0,  1.0),
-            0b111 => vec3!(Meters ;  1.0,  1.0,  1.0),
-            _     => unreachable!(),
-        }
-    }
-}
-
-/// A cube in 3D space.
-#[derive(Copy,Debug)]
-pub struct BoundingCube {
-    /// The location of center of the cube.
-    pub center: math::Vec3<Meters>,
-
-    /// half of the length of a side of the cube.
-    pub half_edge: Meters,
-}
-
-// This enum specifies how a cube is bounded by another cube. It is useful for inserting cubes into
-// an octree.
-//
-// Since I'm using loose octrees, however, idk if this will actually see use.
-enum Boundedness {
-    // The inner cube is not bounded by the other.
-    None,
-
-    // The inner cube is bounded by the other, but none of it's sub-octants bound it.
-    Minimal,
-
-    // The inner cube is bounded by one of this cube's octants.
-    Octant(Octant),
-}
-
-impl BoundingCube {
-    // All of these methods are inlined because they tend to be used together and common
-    // subexpression elimination can go a long way.
-
-    // Return the `Octant` containing `v`, if any. If a point is on the boundary between two
-    // octants, it will err towards S0.
-    #[inline] fn octant(&self, v: math::Vec3<Meters>) -> Option<Octant> {
-        let diff = v - self.center;
-
-        let mut octant = if diff.x.abs() > self.half_edge {
-            return None;
-        } else if diff.x > Meters(0.0) { SX } else { S0 };
-
-        octant = octant | if diff.y.abs() > self.half_edge {
-            return None;
-        } else if diff.y > Meters(0.0) { SY } else { S0 };
-        
-        Some(octant | if diff.z.abs() > self.half_edge {
-            return None;
-        } else if diff.z > Meters(0.0) { SZ } else { S0 })
-    }
-
-    // Return true if `v` is within this cube.
-    #[inline] fn contains(&self, v: math::Vec3<Meters>) -> bool {
-        let diff = v - self.center;
-
-        diff.x.abs() < self.half_edge && diff.y.abs() < self.half_edge &&
-            diff.z.abs() < self.half_edge
-    }
-
-    // Specify how (if at all) `other` is bounded by `self`
-    #[inline] fn boundedness(&self, other: &BoundingCube) -> Boundedness {
-        use self::Boundedness as B;
-
-        let half_diag = vec3!(other.half_edge, other.half_edge, other.half_edge);
-
-        if let Some(near) = self.octant(other.center - half_diag) {
-            match self.octant(other.center + half_diag) {
-                Some(far) if near == far => B::Octant(far),
-                Some(..)                 => B::Minimal,
-                None                     => B::None,
-            }
-        } else {
-            B::None
-        }
-    }
-
-    // Specify whether or not `other` is contained within `self`.
-    #[inline] fn contains_bcube(&self, other: &BoundingCube) -> bool {
-        let half_diag = vec3!(other.half_edge, other.half_edge, other.half_edge);
-
-        self.contains(other.center + half_diag) && self.contains(other.center - half_diag)
-    }
 }

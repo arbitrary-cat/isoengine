@@ -18,6 +18,7 @@
 mod vector2d;
 mod vector3d;
 
+pub use math::bcube::{BoundingCube, Octant, Boundedness,S0,SX,SY,SZ,SXY,SXZ,SYZ,SXYZ};
 pub use math::vector2d::Vec2;
 pub use math::vector3d::Vec3;
 
@@ -80,3 +81,5 @@ macro_rules! vec3 {
         z: $conv($z),
     });
 }
+
+mod bcube;
