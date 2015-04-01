@@ -55,7 +55,7 @@ impl Octant {
 }
 
 /// A cube in 3D space.
-#[derive(Copy,Debug)]
+#[derive(Copy,Clone,Debug)]
 pub struct BoundingCube {
     /// The location of center of the cube.
     pub center: math::Vec3<Meters>,
