@@ -20,6 +20,18 @@ use std::num::Float;
 use math;
 use units::*;
 
+/// How visible an object is to the camera, returned by `Camera::visible`.
+pub enum Visibility {
+    /// The object can't be seen at all.
+    Zero,
+
+    /// The object can be partially seen.
+    Partial,
+
+    /// The object is completely on camera.
+    Full
+}
+
 /// A camera for a world with an isometric orthogonal projection. The camera knows how to translate
 /// from coordinates in the game world to OpenGL's Normalized Device Units.
 pub struct Camera {
@@ -98,5 +110,38 @@ impl Camera {
 
         // TODO: Check to see if the aspect ratio of self.resolution differs from
         // self.true_resolution and adjust the result accordingly.
+    }
+
+    fn point_visible(&self, v: math::Vec3<Meters>) -> bool {
+        let cam = self.game_to_camera(v);
+        let scr = self.camera_to_screen(cam).0;
+        let ndu = self.screen_to_ndu(scr);
+
+        ndu.x > NDU(-1.0) && ndu.x < NDU(1.0) && ndu.y > NDU(-1.0) && ndu.y < NDU(1.0)
+    }
+
+    /// Return true if `bbox` can be seen by the camera.
+    pub fn visible(&self, bbox: math::BoundingCube) -> Visibility {
+        // TODO: maybe there is a more efficient way to do this?
+
+        let a = bbox.center + math::SX.as_vector().scaled(bbox.half_edge * Meters(2.0));
+        let b = bbox.center + math::SXY.as_vector().scaled(bbox.half_edge * Meters(2.0));
+        let c = bbox.center + math::SYZ.as_vector().scaled(bbox.half_edge * Meters(2.0));
+        let d = bbox.center + math::SZ.as_vector().scaled(bbox.half_edge * Meters(2.0));
+
+        let mut hit    = false;
+        let mut missed = false;
+
+        if self.point_visible(a) { hit = true } else { missed = true }
+        if self.point_visible(b) { hit = true } else { missed = true }
+        if self.point_visible(c) { hit = true } else { missed = true }
+        if self.point_visible(d) { hit = true } else { missed = true }
+
+        match (hit, missed) {
+            (false, true)  => Visibility::Zero,
+            (true,  true)  => Visibility::Partial,
+            (true,  false) => Visibility::Full,
+            _              => unreachable!(),
+        }
     }
 }
