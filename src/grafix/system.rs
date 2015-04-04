@@ -15,17 +15,36 @@
 // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-/// Boilerplate-reducing abstractions around OpenGL, taylored to the specific use-case of isoengine.
-pub mod opengl;
+use entity;
+use grafix::sprite;
+use grafix::camera::Camera;
 
-/// Sprite-drawing interface built on top of the `grafix::opengl` module.
-pub mod sprite;
+/// An implementation of `entity::System` which is responsible for rendering sprites.
+pub struct WorldRender<R: sprite::Renderer> {
+    database: sprite::Database,
+    batcher:  sprite::Batcher,
+    renderer: R,
+    camera:   Camera,
+}
 
-/// Sprite-based animations.
-pub mod anim;
+impl<R: sprite::Renderer> entity::System for WorldRender<R> {
+    /// Render last frame's entity batch.
+    fn update(&mut self) {
+        self.batcher.render_batch(&mut self.renderer, &self.database, &self.camera);
+    }
 
-/// Graphics systems.
-pub mod system;
-
-/// Types for working with relationships between screen-space and game-space.
-pub mod camera;
+    /// Add this entity to the batch to be rendered.
+    fn process_entity<'x>(&mut self, entity: &mut entity::View<'x>) {
+       if let &mut entity::View{
+           world_location: Some(ref mut loc),
+           world_render:   Some(ref mut ren),
+           ..
+       } = entity {
+           self.batcher.register(sprite::DrawReq {
+               sheet_id:   ren.sheet_id,
+               sprite_idx: ren.sprite_idx,
+               game_loc:   loc.bounds.center,
+           })
+       }
+    }
+}
