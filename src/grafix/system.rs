@@ -48,3 +48,18 @@ impl<R: sprite::Renderer> entity::System for WorldRender<R> {
        }
     }
 }
+
+impl <R: sprite::Renderer> WorldRender<R> {
+    /// Create a new world rendering system with the given components.
+    ///
+    /// At the moment there is no way to update the database or camera. I'll work on that later.
+    pub fn new(db: sprite::Database, renderer: R, cam: Camera) -> WorldRender<R> {
+        WorldRender {
+            database: db,
+            batcher:  sprite::Batcher::new(),
+            renderer: renderer,
+            camera:   cam,
+        }
+    }
+
+}
