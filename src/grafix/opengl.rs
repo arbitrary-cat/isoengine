@@ -15,6 +15,7 @@
 // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+use std::convert::From;
 use std::ffi;
 use std::iter;
 use std::ptr;
@@ -248,7 +249,7 @@ impl Shader {
                 log_buf.truncate(real_len as usize);
 
                 let log = String::from_utf8(log_buf)
-                    .unwrap_or(String::from_str("Info log was not valid utf-8"));
+                    .unwrap_or(From::from("Info log was not valid utf-8"));
 
                 Err(CompileError{info_log: log})
             } else {
@@ -403,7 +404,7 @@ impl ShaderProgram {
             log_buf.truncate(real_len as usize);
 
             let log = String::from_utf8(log_buf)
-                .unwrap_or(String::from_str("Info log was not valid utf-8"));
+                .unwrap_or(From::from("Info log was not valid utf-8"));
 
             return Err(LinkError{info_log: log});
         }
@@ -426,7 +427,7 @@ impl ShaderProgram {
         };
 
         if attrib == -1 {
-            Err(NoSuchActiveAttrib(String::from_str(name)))
+            Err(NoSuchActiveAttrib(From::from(name)))
         } else {
             Ok(VertexAttrib(attrib as GLuint))
         }
@@ -441,7 +442,7 @@ impl ShaderProgram {
         };
 
         if gl_uniform == -1 {
-            Err(NoSuchActiveUniform(String::from_str(name)))
+            Err(NoSuchActiveUniform(From::from(name)))
         } else {
             Ok(Uniform(gl_uniform))
         }

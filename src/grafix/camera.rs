@@ -15,10 +15,16 @@
 // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-use std::num::Float;
+use std::f64;
+
+use num::{Float, NumCast};
 
 use math;
 use units::*;
+
+fn degrees_to_radians<F: Float>(deg: F) -> F {
+    deg / NumCast::from(360.0f64 / f64::consts::FRAC_PI_2).unwrap()
+}
 
 /// How visible an object is to the camera, returned by `Camera::visible`.
 pub enum Visibility {
@@ -64,9 +70,9 @@ impl Camera {
         // constants is free, and it won't actually build the matrix below.
 
         // These are the opposite of the Euler Angles used to orient the camera.
-        let x_rot: f32 = (-60.0f32).to_radians();
-        let y_rot: f32 = 00.0f32;
-        let z_rot: f32 = (-45.0f32).to_radians();
+        let x_rot: f32 = degrees_to_radians(-60.0f32);
+        let y_rot: f32 = degrees_to_radians( 00.0f32);
+        let z_rot: f32 = degrees_to_radians(-45.0f32);
 
         let (s1, c1) = x_rot.sin_cos();
         let (s2, c2) = y_rot.sin_cos();

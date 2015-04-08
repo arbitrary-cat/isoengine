@@ -85,7 +85,7 @@ macro_rules! make_ecs {
             /// order that they were added to the manager. Similarly, entities are passed to the
             /// systems in the order they were added.
             pub fn add_system<S: System + 'static>(&mut self, system: S) {
-                self.systems.push(box system)
+                self.systems.push(Box::new(system))
             }
 
             /// Run a single frame of processing for all entities and systems.

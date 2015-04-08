@@ -15,8 +15,6 @@
 // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#![feature(box_syntax, collections, core, non_ascii_idents, old_path, std_misc)]
-
 #![warn(missing_docs)]
 
 //! An Encumbered and Closed Source 2D isometric game engine.
@@ -25,7 +23,7 @@ extern crate gl;
 extern crate png;
 extern crate sdl2;
 
-extern crate core;
+extern crate num;
 
 #[macro_use] extern crate mkprim;
 
@@ -43,9 +41,6 @@ pub mod units;
 
 /// Abstractions for dealing with time.
 pub mod time;
-
-/// The scene abstraction which arranges entities and effects on the map.
-pub mod scene;
 
 /// The Entity Component System.
 pub mod entity;

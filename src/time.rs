@@ -15,7 +15,6 @@
 // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-use std::num::Float;
 use std::ops::{Add, Sub, Mul, Div, Rem};
 
 /// A period of time, measured at microsecond granularity. Duratons are unsigned, there is no such
@@ -31,33 +30,33 @@ use std::ops::{Add, Sub, Mul, Div, Rem};
 /// A Duration has a maximum value of around 35 million years.
 #[derive(Copy,Clone,Debug,PartialEq,Eq,PartialOrd,Ord)]
 pub struct Duration {
-    μs: u64,
+    us: u64,
 }
 
 impl Duration {
     /// Create a duration from a given number of seconds.
     pub fn sec(s: u64) -> Duration {
-        Duration { μs: s * 1_000_000 }
+        Duration { us: s * 1_000_000 }
     }
 
     /// Create a duration from a given number of milliseconds.
     pub fn msec(ms: u64) -> Duration {
-        Duration { μs: ms * 1_000 }
+        Duration { us: ms * 1_000 }
     }
 
     /// Create a duration from a given number of microseconds.
-    pub fn μsec(μs: u64) -> Duration {
-        Duration { μs: μs }
+    pub fn usec(us: u64) -> Duration {
+        Duration { us: us }
     }
 
     /// Return the duration as an integer number of seconds.
-    pub fn as_sec(self) -> u64 { self.μs / 1_000_000 }
+    pub fn as_sec(self) -> u64 { self.us / 1_000_000 }
 
     /// Return the duration as an integer number of milliseconds.
-    pub fn as_msec(self) -> u64 { self.μs / 1_000 }
+    pub fn as_msec(self) -> u64 { self.us / 1_000 }
 
     /// Return the duration as an integer number of microseconds.
-    pub fn as_μsec(self) -> u64 { self.μs }
+    pub fn as_usec(self) -> u64 { self.us }
 }
 
 impl Add for Duration {
@@ -65,7 +64,7 @@ impl Add for Duration {
 
     /// Add two durations together, producing another longer duration.
     fn add(self, rhs: Duration) -> Duration {
-        Duration { μs: self.μs + rhs.μs }
+        Duration { us: self.us + rhs.us }
     }
 }
 
@@ -75,7 +74,7 @@ impl Sub for Duration {
     /// Return the difference between two durations. This computes the absolute value of the
     /// difference, and is therefore commutative.
     fn sub(self, rhs: Duration) -> Duration {
-        Duration { μs: if self > rhs { self.μs - rhs.μs } else { rhs.μs - self.μs } }
+        Duration { us: if self > rhs { self.us - rhs.us } else { rhs.us - self.us } }
     }
 }
 
@@ -85,7 +84,7 @@ impl Div for Duration {
     /// Compute the ratio between two durations. How many times would `rhs` have to elapse in order
     /// to equal `self`?
     fn div(self, rhs: Duration) -> f64 {
-        (self.μs as f64) / (rhs.μs as f64)
+        (self.us as f64) / (rhs.us as f64)
     }
 }
 
@@ -94,7 +93,7 @@ impl Mul<f64> for Duration {
 
     /// Scale `self` by the absolute value of `rhs`.
     fn mul(self, rhs: f64) -> Duration {
-        Duration { μs: ((self.μs as f64) * rhs.abs()) as u64 }
+        Duration { us: ((self.us as f64) * rhs.abs()) as u64 }
     }
 }
 
@@ -114,6 +113,6 @@ impl Rem for Duration {
     /// Return the remainder of `self` beyond the nearest integer multiple (possibly 0) of `rhs`
     /// which is less than `self`.
     fn rem(self, rhs: Duration) -> Duration {
-        Duration { μs: self.μs % rhs.μs }
+        Duration { us: self.us % rhs.us }
     }
 }

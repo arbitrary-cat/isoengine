@@ -16,9 +16,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 use std::collections::HashMap;
-use std::error::FromError;
+use std::convert::From;
 use std::mem;
-use std::old_path::Path;
 
 use gl;
 use gl::types::*;
@@ -94,11 +93,8 @@ impl Sheet {
     /// Load a `Sheet` from a descriptor. This turns the paths in the `SheetDesc` into OpenGL
     /// textures.
     pub fn from_desc(desc: SheetDesc) -> Result<Sheet, Error> {
-        let color_path = Path::new(desc.color_path);
-        let depth_path = Path::new(desc.depth_path);
-
-        let color_png = try!(png::load_png(&color_path).map_err(Error::PngError));
-        let depth_png = try!(png::load_png(&depth_path).map_err(Error::PngError));
+        let color_png = try!(png::load_png(&desc.color_path).map_err(Error::PngError));
+        let depth_png = try!(png::load_png(&desc.depth_path).map_err(Error::PngError));
 
         Ok( Sheet {
             origin: vec2!(Pixels ; desc.origin_x as f32, desc.origin_y as f32),
@@ -513,16 +509,14 @@ impl DrawReq {
     fn to_vertex(&self, cam: &Camera, sheet: &Sheet) -> SpriteVertex {
         #![allow(non_snake_case)]
 
-        use std::num::Float;
-
         let  cam_loc         = cam.game_to_camera(self.game_loc);
         let (scr_loc, depth) = cam.camera_to_screen(cam_loc);
 
         let row_coef = TexCoord((self.sprite_idx / sheet.num_across) as f32);
         let col_coef = TexCoord((self.sprite_idx % sheet.num_across) as f32);
 
-        let tex_TL = vec2!(col_coef + Float::one(), row_coef) * sheet.tex_dimens;
-        let tex_BR = vec2!(col_coef, row_coef + Float::one()) * sheet.tex_dimens;
+        let tex_TL = vec2!(col_coef + TexCoord(1.0), row_coef) * sheet.tex_dimens;
+        let tex_BR = vec2!(col_coef, row_coef + TexCoord(1.0)) * sheet.tex_dimens;
 
         let screen_TL_px = scr_loc - sheet.origin;
         let screen_BR_px = screen_TL_px + sheet.scr_dimens;
@@ -531,8 +525,8 @@ impl DrawReq {
             screen_TL: cam.screen_to_ndu(screen_TL_px),
             screen_BR: cam.screen_to_ndu(screen_BR_px),
 
-            tex_TL: vec2!(Float::one() - tex_TL.x, Float::one() - tex_TL.y),
-            tex_BR: vec2!(Float::one() - tex_BR.x, Float::one() - tex_BR.y),
+            tex_TL: vec2!(TexCoord(1.0) - tex_TL.x, TexCoord(1.0) - tex_TL.y),
+            tex_BR: vec2!(TexCoord(1.0) - tex_BR.x, TexCoord(1.0) - tex_BR.y),
 
             depth: depth,
         }
@@ -556,7 +550,10 @@ impl Batcher {
     /// Register a `DrawReq` for this batch.
     pub fn register(&mut self, req: DrawReq) {
         if req.sheet_id >= self.by_sheet.len() {
-            self.by_sheet.resize(req.sheet_id + 1, vec![])
+            // Apparently `Vec::resize` is unstable, so here's a hacked version.
+            let extra = (req.sheet_id + 1) - self.by_sheet.len();
+            self.by_sheet.reserve(extra);
+            for _ in 0..extra { self.by_sheet.push(vec![]) }
         }
 
         self.by_sheet[req.sheet_id].push(req)
@@ -618,28 +615,28 @@ pub enum Error {
     NoSuchActiveUniform(String),
 }
 
-impl FromError<opengl::CompileError> for Error {
-    fn from_error(err: opengl::CompileError) -> Error {
+impl From<opengl::CompileError> for Error {
+    fn from(err: opengl::CompileError) -> Error {
         Error::CompileError(err)
     }
 }
 
-impl FromError<opengl::LinkError> for Error {
-    fn from_error(err: opengl::LinkError) -> Error {
+impl From<opengl::LinkError> for Error {
+    fn from(err: opengl::LinkError) -> Error {
         Error::LinkError(err)
     }
 }
 
-impl FromError<opengl::NoSuchActiveAttrib> for Error {
-    fn from_error(err: opengl::NoSuchActiveAttrib) -> Error {
+impl From<opengl::NoSuchActiveAttrib> for Error {
+    fn from(err: opengl::NoSuchActiveAttrib) -> Error {
         match err {
             opengl::NoSuchActiveAttrib(id) => Error::NoSuchActiveAttrib(id),
         }
     }
 }
 
-impl FromError<opengl::NoSuchActiveUniform> for Error {
-    fn from_error(err: opengl::NoSuchActiveUniform) -> Error {
+impl From<opengl::NoSuchActiveUniform> for Error {
+    fn from(err: opengl::NoSuchActiveUniform) -> Error {
         match err {
             opengl::NoSuchActiveUniform(id) => Error::NoSuchActiveUniform(id),
         }

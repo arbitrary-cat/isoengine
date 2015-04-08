@@ -29,7 +29,7 @@ pub type EntryID = u32;
 
 // A NodeID is a bitwise negation of an index into a LooseOctree's `nodes` field. Hence, the "null"
 // node corresponds to the node at index u32::MAX.
-#[derive(Copy,Debug,PartialEq,Eq)]
+#[derive(Clone,Copy,Debug,PartialEq,Eq)]
 struct NodeID(NonZero<u32>);
 
 impl NodeID {

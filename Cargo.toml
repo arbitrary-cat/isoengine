@@ -5,6 +5,7 @@ version = "0.0.1"
 authors = ["Sam Payson <scpayson@gmail.com>"]
 
 [dependencies]
+num      = "0.1.22"
 bitflags = "0.1.1"
 
 [features]
@@ -15,10 +16,10 @@ trace_gl = []
 git = "https://github.com/arbitrary-cat/mkprim.git"
 
 [dependencies.sdl2]
-git = "https://github.com/AngryLawyer/rust-sdl2.git"
+git = "https://github.com/arbitrary-cat/rust-sdl2.git"
 
 [dependencies.png]
-git = "https://github.com/servo/rust-png.git"
+git = "https://github.com/arbitrary-cat/rust-png.git"
 
 [dependencies.gl]
 git = "https://github.com/bjz/gl-rs.git"

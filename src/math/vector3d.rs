@@ -15,7 +15,7 @@
 // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-use std::num::Float;
+use num::{self, Float, Zero};
 use std::ops::{Add, Sub, Mul, Div, Neg};
 
 /// A 3D Vector type, with floating point elements.
@@ -27,35 +27,36 @@ pub struct Vec3<F: Float> {
     pub z: F,
 }
 
-impl<F: Float> Vec3<F> {
+impl<F: Float> Zero for Vec3<F> {
     /// Return a zero vector.
-    #[inline]
-    pub fn zero() -> Vec3<F> {
-        Vec3 { x: Float::zero(), y: Float::zero(), z: Float::zero() }
+    #[inline] fn zero() -> Vec3<F> {
+        Vec3 { x: Zero::zero(), y: Zero::zero(), z: Zero::zero() }
     }
 
+    #[inline] fn is_zero(&self) -> bool {
+        self.x.is_zero() && self.y.is_zero() && self.z.is_zero()
+    }
+}
+
+impl<F: Float> Vec3<F> {
     /// Compute the dot product of two Vec3's.
-    #[inline]
-    pub fn dot(self, rhs: Vec3<F>) -> F {
+    #[inline] pub fn dot(self, rhs: Vec3<F>) -> F {
         self.x * rhs.x + self.y * rhs.y + self.z * rhs.z
     }
 
     /// Return a vector whose components are equal to `self`, scaled by a factor of `s`.
-    #[inline]
-    pub fn scaled(self, s: F) -> Vec3<F> {
+    #[inline] pub fn scaled(self, s: F) -> Vec3<F> {
         Vec3 { x: self.x * s, y: self.y * s, z: self.z * s }
     }
 
     /// Compute the length of this vector.
-    #[inline]
-    pub fn length(self) -> F {
+    #[inline] pub fn length(self) -> F {
         self.dot(self).sqrt()
     }
 
     /// Return a unit length vector in the same direction as `self`.
-    #[inline]
-    pub fn normalized(self) -> Vec3<F> {
-        self.scaled(self.dot(self).rsqrt())
+    #[inline] pub fn normalized(self) -> Vec3<F> {
+        self.scaled(num::one::<F>() / self.length())
     }
 }
 
@@ -63,8 +64,7 @@ impl<F: Float> Add for Vec3<F> {
     type Output = Vec3<F>;
 
     /// Return the result of adding `self` to `rhs` component-wise.
-    #[inline]
-    fn add(self, rhs: Vec3<F>) -> Vec3<F> {
+    #[inline] fn add(self, rhs: Vec3<F>) -> Vec3<F> {
         Vec3 { x: self.x + rhs.x, y: self.y + rhs.y, z: self.z + rhs.z }
     }
 }
@@ -73,8 +73,7 @@ impl<F: Float> Sub for Vec3<F> {
     type Output = Vec3<F>;
 
     /// Return the result of subtracting `rhs` from `self` component-wise.
-    #[inline]
-    fn sub(self, rhs: Vec3<F>) -> Vec3<F> {
+    #[inline] fn sub(self, rhs: Vec3<F>) -> Vec3<F> {
         Vec3 { x: self.x - rhs.x, y: self.y - rhs.y, z: self.z - rhs.z }
     }
 }
@@ -83,8 +82,7 @@ impl<F: Float> Mul for Vec3<F> {
     type Output = Vec3<F>;
 
     /// Return the result of multiplying `self` by `rhs` component-wise.
-    #[inline]
-    fn mul(self, rhs: Vec3<F>) -> Vec3<F> {
+    #[inline] fn mul(self, rhs: Vec3<F>) -> Vec3<F> {
         Vec3 { x: self.x * rhs.x, y: self.y * rhs.y, z: self.z * rhs.z }
     }
 }
@@ -93,8 +91,7 @@ impl<F: Float> Div for Vec3<F> {
     type Output = Vec3<F>;
 
     /// Return the result of dividing `self` by `rhs` component-wise.
-    #[inline]
-    fn div(self, rhs: Vec3<F>) -> Vec3<F> {
+    #[inline] fn div(self, rhs: Vec3<F>) -> Vec3<F> {
         Vec3 { x: self.x / rhs.x, y: self.y / rhs.y, z: self.z / rhs.z }
     }
 }
@@ -103,10 +100,7 @@ impl<F: Float> Neg for Vec3<F> {
     type Output = Vec3<F>;
 
     /// Return a vector which is the additive inverse of self.
-    #[inline]
-    fn neg(self) -> Vec3<F> {
+    #[inline] fn neg(self) -> Vec3<F> {
         Vec3 { x: -self.x, y: -self.y, z: -self.z }
     }
 }
-
-
