@@ -23,7 +23,7 @@ use math;
 use units::*;
 
 fn degrees_to_radians<F: Float>(deg: F) -> F {
-    deg / NumCast::from(360.0f64 / f64::consts::FRAC_PI_2).unwrap()
+    deg / NumCast::from(180.0f64 / f64::consts::PI).unwrap()
 }
 
 /// How visible an object is to the camera, returned by `Camera::visible`.
