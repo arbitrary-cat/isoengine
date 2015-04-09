@@ -50,17 +50,20 @@ mod ecs {
 
 pub use self::ecs::{EntityID, System, View, Manager};
 
+#[macro_export]
 macro_rules! create_entity {
     ($manager:expr, $($comp_name:ident : $comp_val:expr),+) => {
         create_entity!($manager, $($comp_name, $comp_val,)+)
     };
     ($manager:expr, $($comp_name:ident : $comp_val:expr,)+) => {
-        let mut view = $crate::entity::View::empty();
-        $(
-            let mut $comp_name = $comp_val;
-            view.$comp_name = &mut $comp_name;
-        )+
+        {
+            $( let mut $comp_name = $comp_val; )+
 
-        $manager.entity_from_view(view)
+            let mut view = $crate::entity::View::empty();
+
+            $( view.$comp_name = Some(&mut $comp_name); )+
+
+            $manager.entity_from_view(view)
+        }
     }
 }

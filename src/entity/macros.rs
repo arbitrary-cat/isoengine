@@ -118,9 +118,10 @@ macro_rules! make_ecs {
                 )+
 
                 while let Some(cur_id) = next_entity {
+
+
                     let mut view = View {
                         id: cur_id,
-
                         $($comp_name: match $comp_name.next {
                             Some((id, _)) if *id == cur_id =>
                                 match mem::replace(&mut $comp_name.next, $comp_name.iter.next()) {
@@ -134,6 +135,8 @@ macro_rules! make_ecs {
                     for system in self.systems.iter_mut() {
                         system.process_entity(&mut view);
                     }
+
+                    next_entity = None;
 
                     $(
                         next_entity = match (next_entity, &$comp_name.next) {
