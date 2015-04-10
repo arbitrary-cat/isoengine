@@ -18,34 +18,37 @@
 use std::cell::{self, RefCell};
 use std::collections::HashMap;
 use std::convert::{From,AsRef};
-use std::ops::Deref;
 use std::rc::Rc;
 
 /// A database with interior mutability. It can hand out read-only `DatabaseHandle`s while still
 /// allowing elements to be inserted (by using `RefCell` internally).
+#[derive(Clone)]
 pub struct SharedDb<T> {
-    inner: Rc<Db<T>>,
+    inner: Rc<RefCell<Db<T>>>,
 }
 
 struct Db<T> {
     db_name: String,
-    name2id: RefCell<HashMap<String, usize>>,
-    id2elem: RefCell<Vec<T>>,
+    name2id: HashMap<String, usize>,
+    id2elem: Vec<T>,
 }
 
 impl<T> SharedDb<T> {
     /// Create a new empty `Database`.
     pub fn new<S>(name: S) -> SharedDb<T> where String: From<S> {
         SharedDb{
-            inner: Rc::new( Db {
+            inner: Rc::new( RefCell::new( Db {
                 db_name: From::from(name),
-                name2id: RefCell::new(HashMap::new()),
-                id2elem: RefCell::new(Vec::new()),
-            }),
+                name2id: HashMap::new(),
+                id2elem: Vec::new(),
+            })),
         }
     }
 
     /// Insert a resource into the database.
+    ///
+    /// This method utilizes interior mutability. It cannot be called if there are presently any
+    /// `Handle`s to this database.
     ///
     /// # Errors
     ///
@@ -54,65 +57,44 @@ impl<T> SharedDb<T> {
     pub fn insert<S>(&self, name: S, elem: T) where String: From<S> {
         let owned_name = From::from(name);
 
-        if self.inner.name2id.borrow().contains_key(&owned_name) {
+        let mut inner = self.inner.borrow_mut();
+
+        if inner.name2id.contains_key(&owned_name) {
             error!("Attempted to insert more than one resource named `{}' into the `{}' database.",
-                owned_name, self.inner.db_name);
+                owned_name, inner.db_name);
             return
         }
 
-        let id = self.inner.id2elem.borrow().len();
+        let id = inner.id2elem.len();
 
-        debug_assert_eq!(self.inner.name2id.borrow_mut().insert(owned_name, id), None);
-        self.inner.id2elem.borrow_mut().push(elem);
+        debug_assert_eq!(inner.name2id.insert(owned_name, id), None);
+        inner.id2elem.push(elem);
     }
 
-    /// 
-    pub fn get_handle(&self) -> Handle<T> {
-        Handle{ inner: self.inner.clone() }
-    }
-}
-
-/// A reference to a resource stored in a database. This reference is tied to an immutable borrow
-/// from an internal `RefCell` of the database, mutable operations on that database (i.e.
-/// `SharedDb::insert`) will panic if called while this `Ref` is alive.
-pub struct Ref<'x, T: 'x> {
-    inner: cell::Ref<'x, Vec<T>>,
-    index: usize,
-}
-
-impl<'x, T> Deref for Ref<'x, T> {
-    type Target = T;
-
-    /// Return a reference to the underlying resource.
-    fn deref<'a>(&'a self) -> &'a T {
-        self.inner.get(self.index).unwrap()
+    /// A read-only view into the database. It is capable of handing out references to resources
+    /// which live for as long as the `Handle` itself.
+    ///
+    /// The `insert` method may only be called if there are no active `Handle`s.
+    pub fn get_handle<'x>(&'x self) -> Handle<'x, T> {
+        Handle{ inner: self.inner.borrow() }
     }
 }
 
 /// A read-only reference to a `SharedDb`.
-pub struct Handle<T> {
-    inner: Rc<Db<T>>,
+pub struct Handle<'x, T: 'x> {
+    inner: cell::Ref<'x, Db<T>>,
 }
 
-impl<T> Handle<T> {
+impl<'x, T: 'x> Handle<'x, T> {
     /// If there is a `Sheet` stored under `name` in the database, return its id. Otherwise return
     /// None.
     pub fn get_id<S: AsRef<str>>(&self, name: S) -> Option<usize> {
-        self.inner.name2id.borrow().get(name.as_ref()).cloned()
+        self.inner.name2id.get(name.as_ref()).cloned()
     }
 
     /// Get a sprite sheet from an id. If there is no sheet with that id, then None is returned. But
     /// that should never happen because you got the id by calling `self.get_id()`... right?
-    pub fn get_resource<'x>(&'x self, id: usize) -> Option<Ref<'x, T>> {
-        let inner = self.inner.id2elem.borrow();
-
-        if inner.get(id).is_some() {
-            Some(Ref {
-                inner: inner,
-                index: id,
-            })
-        } else {
-            None
-        }
+    pub fn get_resource(&self, id: usize) -> Option<&T> {
+        self.inner.id2elem.get(id)
     }
 }
