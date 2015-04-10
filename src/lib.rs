@@ -24,6 +24,7 @@ extern crate png;
 extern crate sdl2;
 
 extern crate num;
+#[macro_use] extern crate log;
 
 #[macro_use] extern crate mkprim;
 
@@ -44,6 +45,9 @@ pub mod time;
 
 /// The Entity Component System.
 pub mod entity;
+
+/// Systems which process entities, and tools for constructing them.
+pub mod system;
 
 use grafix::opengl;
 
