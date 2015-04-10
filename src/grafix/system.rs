@@ -31,7 +31,7 @@ pub struct WorldRender<R: sprite::Renderer> {
 impl<R: sprite::Renderer> entity::System for WorldRender<R> {
     /// Render last frame's entity batch.
     fn update(&mut self, _now: time::Duration) {
-        self.batcher.render_batch(&mut self.renderer, &self.database, &self.camera);
+        self.batcher.render_batch(&mut self.renderer, self.database.get_handle(), &self.camera);
     }
 
     /// Add this entity to the batch to be rendered.
