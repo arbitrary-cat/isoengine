@@ -18,6 +18,7 @@
 use entity;
 use grafix::sprite;
 use grafix::camera::Camera;
+use time;
 
 /// An implementation of `entity::System` which is responsible for rendering sprites.
 pub struct WorldRender<R: sprite::Renderer> {
@@ -29,12 +30,12 @@ pub struct WorldRender<R: sprite::Renderer> {
 
 impl<R: sprite::Renderer> entity::System for WorldRender<R> {
     /// Render last frame's entity batch.
-    fn update(&mut self) {
+    fn update(&mut self, _now: time::Duration) {
         self.batcher.render_batch(&mut self.renderer, &self.database, &self.camera);
     }
 
     /// Add this entity to the batch to be rendered.
-    fn process_entity<'x>(&mut self, entity: &mut entity::View<'x>) {
+    fn process_entity<'x>(&mut self, _now: time::Duration, entity: &mut entity::View<'x>) {
        if let &mut entity::View{
            world_location: Some(ref mut loc),
            world_render:   Some(ref mut ren),

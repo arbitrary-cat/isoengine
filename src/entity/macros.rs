@@ -22,6 +22,8 @@ macro_rules! make_ecs {
         use ::std::mem;
         use ::std::collections::{btree_map, BTreeMap};
 
+        use $crate::time;
+
         /// An entity is just a unique identifier which is used to locate associated components.
         pub type EntityID = u64;
 
@@ -31,10 +33,10 @@ macro_rules! make_ecs {
         pub trait System {
             /// Do general processing. This is called once per simulation step, before
             /// `process_entity` is called on any entities.
-            fn update(&mut self);
+            fn update(&mut self, now: time::Duration);
 
             /// Process an entity. This will be called once per entity, per simulation step.
-            fn process_entity<'x>(&mut self, entity: &mut View<'x>);
+            fn process_entity<'x>(&mut self, now: time::Duration, entity: &mut View<'x>);
         }
 
         /// A view of an entity. This struct is passed to the `System`s for each entity they
@@ -89,9 +91,9 @@ macro_rules! make_ecs {
             }
 
             /// Run a single frame of processing for all entities and systems.
-            pub fn update(&mut self) {
+            pub fn update(&mut self, now: time::Duration) {
                 for system in self.systems.iter_mut() {
-                    system.update();
+                    system.update(now);
                 }
 
                 $(
@@ -133,7 +135,7 @@ macro_rules! make_ecs {
                     };
 
                     for system in self.systems.iter_mut() {
-                        system.process_entity(&mut view);
+                        system.process_entity(now, &mut view);
                     }
 
                     next_entity = None;
