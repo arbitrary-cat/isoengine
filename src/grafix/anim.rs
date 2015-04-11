@@ -39,6 +39,7 @@ pub struct Anim {
 /// An instance of an animation, which specifies how long it should take for the animation to
 /// complete, when the animation began, where the first frame's sprite is located, and where the
 /// animation should end up.
+#[derive(Clone)]
 pub struct Instance {
     /// The Anim being instantiated.
     pub anim_id: AnimID,
@@ -91,6 +92,6 @@ impl Instance {
 
     /// Return the time at which this instance will end.
     pub fn end_time(&self) -> time::Duration {
-        self.t_start + self.dur
+        self.t_start + self.duration
     }
 }

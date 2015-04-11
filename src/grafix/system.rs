@@ -17,35 +17,35 @@
 
 use entity;
 use grafix::sprite;
+use grafix::anim;
 use grafix::camera::Camera;
 use time;
 
 /// An implementation of `entity::System` which is responsible for rendering sprites.
 pub struct WorldRender<R: sprite::Renderer> {
-    database: sprite::Database,
-    batcher:  sprite::Batcher,
-    renderer: R,
-    camera:   Camera,
+    sprite_db: sprite::Database,
+    anim_db:   anim::Database,
+    batcher:   sprite::Batcher,
+    renderer:  R,
+    camera:    Camera,
 }
 
 impl<R: sprite::Renderer> entity::System for WorldRender<R> {
     /// Render last frame's entity batch.
     fn update(&mut self, _now: time::Duration) {
-        self.batcher.render_batch(&mut self.renderer, self.database.get_handle(), &self.camera);
+        self.batcher.render_batch(&mut self.renderer, self.sprite_db.get_handle(), &self.camera);
     }
 
     /// Add this entity to the batch to be rendered.
-    fn process_entity<'x>(&mut self, _now: time::Duration, entity: &mut entity::View<'x>) {
+    fn process_entity<'x>(&mut self, now: time::Duration, entity: &mut entity::View<'x>) {
        if let &mut entity::View{
            world_location: Some(ref mut loc),
            world_render:   Some(ref mut ren),
            ..
        } = entity {
-           self.batcher.register(sprite::DrawReq {
-               sheet_id:   ren.sheet_id,
-               sprite_idx: ren.sprite_idx,
-               game_loc:   loc.bounds.center,
-           })
+            if let Some(req) = ren.anim.draw_at(self.anim_db.get_handle(), loc.bounds.center, now) {
+                self.batcher.register(req)
+            }
        }
     }
 }
@@ -54,12 +54,13 @@ impl <R: sprite::Renderer> WorldRender<R> {
     /// Create a new world rendering system with the given components.
     ///
     /// At the moment there is no way to update the database or camera. I'll work on that later.
-    pub fn new(db: sprite::Database, renderer: R, cam: Camera) -> WorldRender<R> {
+    pub fn new(spr: sprite::Database, anm: anim::Database, renderer: R, cam: Camera) -> WorldRender<R> {
         WorldRender {
-            database: db,
-            batcher:  sprite::Batcher::new(),
-            renderer: renderer,
-            camera:   cam,
+            sprite_db: spr,
+            anim_db:   anm,
+            batcher:   sprite::Batcher::new(),
+            renderer:  renderer,
+            camera:    cam,
         }
     }
 

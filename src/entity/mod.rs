@@ -15,7 +15,7 @@
 // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-use grafix::sprite;
+use grafix::anim;
 use math;
 
 #[macro_use]
@@ -31,11 +31,9 @@ pub struct WorldLocation {
 /// Provides an entity with a visible image on the world map.
 #[derive(Clone)]
 pub struct WorldRender {
-    /// Sprite sheet to draw this entity from.
-    pub sheet_id: sprite::SheetID,
-
-    /// Index within the sheet of the sprite to draw.
-    pub sprite_idx: usize,
+    /// The animation that this entity is currently running (possibly a single-frame static
+    /// animation).
+    pub anim: anim::Instance,
 }
 
 mod ecs {
