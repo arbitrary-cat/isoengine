@@ -17,9 +17,15 @@
 
 use grafix::sprite;
 use math;
+use system::db;
+use time;
 use units::*;
 
-use time;
+/// An ID that refers to a particular `Anim` in a `Database`.
+pub type AnimID = usize;
+
+/// A `SharedDb` of `anim::Anim`s.
+pub type Database = db::SharedDb<Anim>;
 
 /// An animation, which is just an ordered collection of sprites from a sprite-sheet.
 pub struct Anim {
@@ -30,68 +36,57 @@ pub struct Anim {
     pub indices:  Vec<usize>,
 }
 
-impl Anim {
-    /// Create an instance of this anim which starts at time `t_start` and runs for Duration `dur`,
-    /// beginning at `start_loc` and being displaced by `disp`.
-    pub fn instance<'x>(
-        &'x self,
-        t_start: time::Duration,
-        dur: time::Duration,
-        loc_start: math::Vec3<Meters>,
-        disp: math::Vec3<Meters>,
-    ) -> Instance<'x> {
-
-        Instance {
-            anim:      self,
-            t_start:   t_start,
-            dur:       dur,
-            loc_start: loc_start,
-            disp:      disp,
-        }
-    }
-
-}
-
 /// An instance of an animation, which specifies how long it should take for the animation to
 /// complete, when the animation began, where the first frame's sprite is located, and where the
 /// animation should end up.
-pub struct Instance<'x> {
-    // The Anim being instantiated.
-    anim: &'x Anim,
+pub struct Instance {
+    /// The Anim being instantiated.
+    pub anim_id: AnimID,
 
-    // The time (expressed as a duration since startup) at which the animation began.
-    t_start: time::Duration,
+    /// The time (expressed as a duration since startup) at which the animation began.
+    pub t_start: time::Duration,
 
-    // The duration of the animation.
-    dur: time::Duration,
+    /// The duration of the animation.
+    pub duration: time::Duration,
 
-    // The location at which the animation begins.
-    loc_start: math::Vec3<Meters>,
-
-    // The displacement vector of the animation (i.e. how far and in what direction the animation
-    // will move).
-    disp: math::Vec3<Meters>
+    /// True if this animation should repeat indefinitely.
+    pub repeat: bool,
 }
 
-impl<'x> Instance<'x> {
+impl Instance {
     /// Return a `sprite::DrawReq` for this instance rendered at a particular time.
-    pub fn draw_at(&self, t: time::Duration) -> sprite::DrawReq {
-        let elapsed = t - self.t_start;
-        let interp = if t < self.t_start {
-            0.0
-        } else if elapsed / self.dur > 0.999 {
-            0.999
+    pub fn draw_at(&self, db: db::Handle<Anim>, loc: math::Vec3<Meters>, t: time::Duration)
+        -> Option<sprite::DrawReq> {
+
+        let anim = if let Some(anim) = db.get_resource(self.anim_id) {
+            anim
         } else {
-            elapsed / self.dur
+            return None
         };
 
-        let frame = ((self.anim.indices.len() as f64) * interp) as usize;
-
-        sprite::DrawReq {
-            sheet_id:   self.anim.sheet_id,
-            sprite_idx: self.anim.indices[frame],
-            game_loc:   self.loc_start + self.disp.scaled(Meters(interp as f32)),
+        if t < self.t_start {
+            return None
         }
+
+        let elapsed = if self.repeat {
+            (t - self.t_start) % self.duration
+        } else {
+            t - self.t_start
+        };
+
+        let interp = elapsed / self.duration;
+
+        if interp >= 1.0 {
+            return None
+        }
+
+        let frame = ((anim.indices.len() as f64) * interp).floor() as usize;
+
+        Some(sprite::DrawReq {
+            sheet_id:   anim.sheet_id,
+            sprite_idx: anim.indices[frame],
+            game_loc:   loc,
+        })
     }
 
     /// Return the time at which this instance will end.
