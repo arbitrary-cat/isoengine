@@ -54,6 +54,12 @@ impl<T> SharedDb<T> {
     ///
     /// If there is already a resource by this name than an error will be logged and `self` will be
     /// unchanged.
+    ///
+    /// # Panics
+    ///
+    /// If there are any `Handle`s to this database, then this method will panic (when it tries to
+    /// gain a mutable reference to an internal `RefCell`, which will have already lent an immutable
+    /// reference to the `Handle`).
     pub fn insert<S>(&self, name: S, elem: T) where String: From<S> {
         let owned_name = From::from(name);
 
