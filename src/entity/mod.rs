@@ -36,7 +36,8 @@ pub struct WorldRender {
     pub anim: anim::Instance,
 }
 
-mod ecs {
+/// The client-side entity system.
+#[cfg(feature = "client")] pub mod client {
     use super::WorldLocation;
     use super::WorldRender;
 
@@ -46,22 +47,55 @@ mod ecs {
     }
 }
 
-pub use self::ecs::{EntityID, System, View, Manager};
+/// The server-side entity system.
+#[cfg(feature = "server")] pub mod server {
+    use super::WorldLocation;
+    use super::WorldRender;
+
+    make_ecs! {
+        world_location: WorldLocation,
+        world_render:   WorldRender
+    }
+}
 
 #[macro_export]
-macro_rules! create_entity {
+macro_rules! client_entity {
+
     ($manager:expr, $($comp_name:ident : $comp_val:expr),+) => {
-        create_entity!($manager, $($comp_name, $comp_val,)+)
+        create_entity!($module, $manager, $($comp_name : $comp_val,)+)
     };
+
     ($manager:expr, $($comp_name:ident : $comp_val:expr,)+) => {
         {
             $( let mut $comp_name = $comp_val; )+
 
-            let mut view = $crate::entity::View::empty();
+            let mut __view = $crate::entity::client::View::empty();
 
-            $( view.$comp_name = Some(&mut $comp_name); )+
+            $( __view.$comp_name = Some(&mut $comp_name); )+
 
-            $manager.entity_from_view(view)
+            $manager.entity_from_view(__view)
         }
     }
+
+}
+
+#[macro_export]
+macro_rules! server_entity {
+
+    ($manager:expr, $($comp_name:ident : $comp_val:expr),+) => {
+        create_entity!($module, $manager, $($comp_name : $comp_val,)+)
+    };
+
+    ($manager:expr, $($comp_name:ident : $comp_val:expr,)+) => {
+        {
+            $( let mut $comp_name = $comp_val; )+
+
+            let mut __view = $crate::entity::server::View::empty();
+
+            $( __view.$comp_name = Some(&mut $comp_name); )+
+
+            $manager.entity_from_view(__view)
+        }
+    }
+
 }

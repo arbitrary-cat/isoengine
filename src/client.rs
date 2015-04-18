@@ -15,44 +15,10 @@
 // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#![warn(missing_docs)]
+use grafix::opengl;
+use sdl2;
 
-//! An Encumbered and Closed Source 2D isometric game engine.
-
-#[cfg(feature = "client")] extern crate gl;
-#[cfg(feature = "client")] extern crate png;
-#[cfg(feature = "client")] extern crate sdl2;
-
-extern crate num;
-#[macro_use] extern crate log;
-
-#[macro_use] extern crate mkprim;
-
-#[macro_use] extern crate bitflags;
-
-/// Vector math.
-#[macro_use]
-pub mod math;
-
-/// Units used throughout the engine.
-pub mod units;
-
-/// High-level graphics abstractions built on top of OpenGL.
-#[macro_use] pub mod grafix;
-
-/// Abstractions for dealing with time.
-pub mod time;
-
-/// The Entity Component System.
-pub mod entity;
-
-/// Systems which process entities, and tools for constructing them.
-pub mod system;
-
-
-/// A RAII handle for the whole engine. Once this baby leaves scope, it's curtains.
-///
-/// ...I'm tired, okay?
+/// A RAII handle for the client-side engine.
 #[allow(dead_code)]
 pub struct Context {
     gfx: opengl::Context,
@@ -60,7 +26,7 @@ pub struct Context {
 }
 
 impl Context {
-    /// Create a new isoengine context. This will create a window and an OpenGL context, as well as
+    /// Create a new client context. This will create a window and an OpenGL context, as well as
     /// initialize all SDL subsystems.
     pub fn new(title: &str, x_res: i32, y_res: i32) -> Result<Context, String> {
         let sdl = try!(sdl2::init(sdl2::INIT_EVERYTHING));
@@ -79,6 +45,3 @@ impl Context {
     /// for me to see what's going on in a window that "isn't responding". Thanks Ubuntu.
     pub fn dbg_get_sdl(&self) -> &sdl2::Sdl { &self.sdl }
 }
-
-/// Code which is specific to game clients (as opposed to servers).
-#[cfg(feature = "client")] pub mod client;

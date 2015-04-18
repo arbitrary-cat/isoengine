@@ -15,17 +15,25 @@
 // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-/// Boilerplate-reducing abstractions around OpenGL, taylored to the specific use-case of bizrock.
-#[cfg(feature = "client")] pub mod opengl;
+use time;
 
-/// Sprite-drawing interface built on top of the `grafix::opengl` module.
-pub mod sprite;
+/// An ID that refers to a particular `Anim` in a `Database`.
+pub type AnimID = usize;
 
-/// Sprite-based animations.
-pub mod anim;
+/// An instance of an animation, which specifies how long it should take for the animation to
+/// complete, when the animation began, where the first frame's sprite is located, and where the
+/// animation should end up.
+#[derive(Clone)]
+pub struct Instance {
+    /// The Anim being instantiated.
+    pub anim_id: AnimID,
 
-/// Graphics systems.
-pub mod system;
+    /// The time (expressed as a duration since startup) at which the animation began.
+    pub t_start: time::Duration,
 
-/// Types for working with relationships between screen-space and game-space.
-pub mod camera;
+    /// The duration of the animation.
+    pub duration: time::Duration,
+
+    /// True if this animation should repeat indefinitely.
+    pub repeat: bool,
+}

@@ -15,17 +15,8 @@
 // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-/// Boilerplate-reducing abstractions around OpenGL, taylored to the specific use-case of bizrock.
-#[cfg(feature = "client")] pub mod opengl;
+#[cfg(feature = "client")] mod client;
+#[cfg(feature = "client")] pub use self::client::*;
 
-/// Sprite-drawing interface built on top of the `grafix::opengl` module.
-pub mod sprite;
-
-/// Sprite-based animations.
-pub mod anim;
-
-/// Graphics systems.
-pub mod system;
-
-/// Types for working with relationships between screen-space and game-space.
-pub mod camera;
+mod common;
+pub use self::common::*;
