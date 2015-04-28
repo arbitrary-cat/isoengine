@@ -15,11 +15,11 @@
 // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#[cfg(feature = "client")] mod client;
-#[cfg(feature = "client")] pub use self::client::*;
+namespace grafix.anim.wire;
 
-#[allow(missing_docs)]
-pub mod wire;
-
-mod common;
-pub use self::common::*;
+struct AnimInstance {
+    t_start:  ulong;
+    duration: ulong;
+    id:       uint;
+    repeat:   bool;
+}

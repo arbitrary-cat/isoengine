@@ -37,3 +37,25 @@ pub struct Instance {
     /// True if this animation should repeat indefinitely.
     pub repeat: bool,
 }
+
+impl Instance {
+    /// Create a struct from its FlatBuffer representation.
+    pub fn from_wire(w: &super::wire::AnimInstance) -> Instance {
+        Instance {
+            anim_id:  w.id() as AnimID,
+            t_start:  time::Duration::usec(w.t_start()),
+            duration: time::Duration::usec(w.duration()),
+            repeat:   w.repeat(),
+        }
+    }
+
+    /// Get the FlatBuffer representation of this struct.
+    pub fn to_wire(&self) -> super::wire::AnimInstance {
+        super::wire::AnimInstance::new(
+            self.t_start.as_usec(),
+            self.duration.as_usec(),
+            self.anim_id as u32,
+            self.repeat,
+        )
+    }
+}

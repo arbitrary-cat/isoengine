@@ -15,11 +15,29 @@
 // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#[cfg(feature = "client")] mod client;
-#[cfg(feature = "client")] pub use self::client::*;
+include "grafix/anim/wire.fbs";
 
-#[allow(missing_docs)]
-pub mod wire;
+namespace entity.wire;
 
-mod common;
-pub use self::common::*;
+struct BoundingCube {
+    center_x:  float;
+    center_y:  float;
+    center_z:  float;
+    half_edge: float;
+}
+
+struct WorldLocation {
+    bounds: BoundingCube;
+}
+
+struct WorldRender {
+    anim: AnimInstance;
+}
+
+table Entity {
+    id:        uint;
+    world_loc: WorldLocation;
+    world_ren: WorldRender;
+}
+
+root_type Entity;

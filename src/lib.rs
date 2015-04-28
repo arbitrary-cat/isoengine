@@ -23,7 +23,10 @@
 #[cfg(feature = "client")] extern crate png;
 #[cfg(feature = "client")] extern crate sdl2;
 
+extern crate flatbuffers;
+
 extern crate num;
+
 #[macro_use] extern crate log;
 
 #[macro_use] extern crate mkprim;

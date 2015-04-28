@@ -5,7 +5,7 @@ version = "0.0.1"
 authors = ["Sam Payson <scpayson@gmail.com>"]
 
 [dependencies]
-num      = "0.1.22"
+num      = "0.1.24"
 bitflags = "0.1.1"
 log      = "0.3.1"
 
@@ -16,6 +16,9 @@ trace_gl = []
 client = [ "gl", "sdl2", "png" ]
 
 server = []
+
+[dependencies.flatbuffers]
+git = "https://github.com/arbitrary-cat/flatbuffers-rs.git"
 
 [dependencies.mkprim]
 git = "https://github.com/arbitrary-cat/mkprim.git"

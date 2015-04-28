@@ -17,9 +17,13 @@
 
 use grafix::anim;
 use math;
+use units::*;
 
 #[macro_use]
 mod macros;
+
+#[allow(missing_docs)]
+pub mod wire;
 
 /// Provides an entity with a location on the world map.
 #[derive(Clone)]
@@ -28,12 +32,52 @@ pub struct WorldLocation {
     pub bounds: math::BoundingCube,
 }
 
+impl WorldLocation {
+    /// Convert from FlatBuffer representation.
+    pub fn from_wire(w: &wire::WorldLocation) -> WorldLocation {
+        WorldLocation {
+            bounds: math::BoundingCube {
+                center: vec3!(Meters ;
+                    w.bounds().center_x(),
+                    w.bounds().center_y(),
+                    w.bounds().center_z(),
+                ),
+                half_edge: Meters(w.bounds().half_edge()),
+            }
+        }
+    }
+
+    /// Convert to FlatBuffer representation.
+    pub fn to_wire(&self) -> wire::WorldLocation {
+        wire::WorldLocation::new(
+            &wire::BoundingCube::new(
+                self.bounds.center.x.0,
+                self.bounds.center.y.0,
+                self.bounds.center.z.0,
+                self.bounds.half_edge.0,
+            )
+        )
+    }
+}
+
 /// Provides an entity with a visible image on the world map.
 #[derive(Clone)]
 pub struct WorldRender {
     /// The animation that this entity is currently running (possibly a single-frame static
     /// animation).
     pub anim: anim::Instance,
+}
+
+impl WorldRender {
+    /// Convert from FlatBuffer representation.
+    pub fn from_wire(w: &wire::WorldRender) -> WorldRender {
+        WorldRender { anim: anim::Instance::from_wire(w.anim()) }
+    }
+
+    /// Convert to FlatBuffer representation.
+    pub fn to_wire(&self) -> wire::WorldRender {
+        wire::WorldRender::new(&self.anim.to_wire())
+    }
 }
 
 /// The client-side entity system.
