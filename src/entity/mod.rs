@@ -15,9 +15,6 @@
 // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-use grafix::anim;
-use math;
-use units::*;
 
 #[macro_use]
 mod macros;
@@ -25,80 +22,26 @@ mod macros;
 #[allow(missing_docs)]
 pub mod wire;
 
-/// Provides an entity with a location on the world map.
-#[derive(Clone)]
-pub struct WorldLocation {
-    /// Bounding cube for this entity.
-    pub bounds: math::BoundingCube,
-}
-
-impl WorldLocation {
-    /// Convert from FlatBuffer representation.
-    pub fn from_wire(w: &wire::WorldLocation) -> WorldLocation {
-        WorldLocation {
-            bounds: math::BoundingCube {
-                center: vec3!(Meters ;
-                    w.bounds().center_x(),
-                    w.bounds().center_y(),
-                    w.bounds().center_z(),
-                ),
-                half_edge: Meters(w.bounds().half_edge()),
-            }
-        }
-    }
-
-    /// Convert to FlatBuffer representation.
-    pub fn to_wire(&self) -> wire::WorldLocation {
-        wire::WorldLocation::new(
-            &wire::BoundingCube::new(
-                self.bounds.center.x.0,
-                self.bounds.center.y.0,
-                self.bounds.center.z.0,
-                self.bounds.half_edge.0,
-            )
-        )
-    }
-}
-
-/// Provides an entity with a visible image on the world map.
-#[derive(Clone)]
-pub struct WorldRender {
-    /// The animation that this entity is currently running (possibly a single-frame static
-    /// animation).
-    pub anim: anim::Instance,
-}
-
-impl WorldRender {
-    /// Convert from FlatBuffer representation.
-    pub fn from_wire(w: &wire::WorldRender) -> WorldRender {
-        WorldRender { anim: anim::Instance::from_wire(w.anim()) }
-    }
-
-    /// Convert to FlatBuffer representation.
-    pub fn to_wire(&self) -> wire::WorldRender {
-        wire::WorldRender::new(&self.anim.to_wire())
-    }
-}
+/// Components which can make up client- or server-side entities.
+pub mod component;
 
 /// The client-side entity system.
 #[cfg(feature = "client")] pub mod client {
-    use super::WorldLocation;
-    use super::WorldRender;
+    use entity::component;
 
     make_ecs! {
-        world_location: WorldLocation,
-        world_render:   WorldRender
+        world_location: component::WorldLocation,
+        world_render:   component::WorldRender,
     }
 }
 
 /// The server-side entity system.
 #[cfg(feature = "server")] pub mod server {
-    use super::WorldLocation;
-    use super::WorldRender;
+    use entity::component;
 
     make_ecs! {
-        world_location: WorldLocation,
-        world_render:   WorldRender
+        world_location: component::WorldLocation,
+        world_render:   component::WorldRender,
     }
 }
 
