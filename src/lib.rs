@@ -43,6 +43,9 @@ pub mod units;
 /// High-level graphics abstractions built on top of OpenGL.
 #[macro_use] pub mod grafix;
 
+/// Code for managing assets between a server and clients.
+pub mod asset;
+
 /// Abstractions for dealing with time.
 pub mod time;
 

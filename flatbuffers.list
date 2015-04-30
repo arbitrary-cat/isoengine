@@ -1,2 +1,4 @@
-src/grafix/anim/wire.fbs
+src/asset/wire.fbs
 src/entity/wire.fbs
+src/grafix/anim/wire.fbs
+src/grafix/sprite/wire.fbs

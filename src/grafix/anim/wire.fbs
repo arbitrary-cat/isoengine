@@ -23,3 +23,9 @@ struct AnimInstance {
     id:       uint;
     repeat:   bool;
 }
+
+table Anim {
+    name:     string   (required);
+    sheet:    string   (required);
+    indices:  [ushort] (required);
+}

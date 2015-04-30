@@ -17,6 +17,8 @@
 
 use super::common::*;
 
+use asset;
+use grafix;
 use grafix::sprite;
 use math;
 use system::db;
@@ -29,10 +31,20 @@ pub type Database = db::SharedDb<Anim>;
 /// An animation, which is just an ordered collection of sprites from a sprite-sheet.
 pub struct Anim {
     /// The ID of the sheet where the sprites for this animation reside.
-    pub sheet_id: sprite::SheetID,
+    pub sheet_id: asset::AssetID,
 
     /// The indices of the frames of this animation, in order. This vector **must** be non-empty.
-    pub indices:  Vec<usize>,
+    pub indices:  Vec<u16>,
+}
+
+impl Anim {
+    /// Convert from FlatBuffer representation.
+    pub fn from_wire<'x>(w: &grafix::anim::wire::Anim, h: asset::Handle<'x>) -> Anim {
+        Anim {
+            sheet_id: h.get_id(w.sheet().expect("sheet name in flatbuf")).expect("sheet id in DB"),
+            indices:  w.indices().expect("indices in flatbuf").iter().collect(),
+        }
+    }
 }
 
 impl Instance {
@@ -66,7 +78,7 @@ impl Instance {
 
         Some(sprite::DrawReq {
             sheet_id:   anim.sheet_id,
-            sprite_idx: anim.indices[frame],
+            sprite_idx: anim.indices[frame] as usize,
             game_loc:   loc,
         })
     }

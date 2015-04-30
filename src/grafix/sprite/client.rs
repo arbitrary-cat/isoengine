@@ -17,7 +17,7 @@
 
 use super::common::*;
 
-use std::convert::From;
+use std::convert::{AsRef, From};
 use std::mem;
 
 use gl;
@@ -25,6 +25,7 @@ use gl::types::*;
 use png;
 
 use grafix::opengl;
+use grafix;
 
 use grafix::camera::Camera;
 use math;
@@ -37,37 +38,56 @@ const MAX_SPRITES: usize = 16 * 1024;
 /// A descriptor which explains the properties of a sprite sheet and where to find the textures.
 pub struct SheetDesc {
     /// Width of the texture, in texels.
-    pub img_width:  u32,
+    pub img_width:  u16,
 
     /// Height of the texture, in texels.
-    pub img_height: u32,
+    pub img_height: u16,
 
     /// X-coordinate of origin pixel.
-    pub origin_x: u32,
+    pub origin_x: u16,
 
     /// Y-coordinate of origin pixel.
-    pub origin_y: u32,
+    pub origin_y: u16,
 
     /// Width of each sprite, in texels.
-    pub spr_width: u32,
+    pub spr_width: u16,
 
     /// Height of each sprite, in texels.
-    pub spr_height: u32,
+    pub spr_height: u16,
 
     /// Number of sprites in each row in the sheet.
-    pub num_across: u32,
+    pub num_across: u16,
 
     /// Number of sprites in each column in the sheet.
-    pub num_down: u32,
+    pub num_down: u16,
 
     /// Total number of sprites in the sheet.
-    pub total: u32,
+    pub total: u16,
 
     /// Path to the color PNG for this sprite sheet.
     pub color_path: String,
 
     /// Path to the depth PNG for this sprite sheet.
     pub depth_path: String,
+}
+
+impl SheetDesc {
+    /// Convert from FlatBuffer representation.
+    pub fn from_wire(w: &grafix::sprite::wire::SpriteSheetDesc) -> SheetDesc {
+        SheetDesc {
+            img_width:  w.img_width(),
+            img_height: w.img_height(),
+            origin_x:   w.origin_x(),
+            origin_y:   w.origin_y(),
+            spr_width:  w.spr_width(),
+            spr_height: w.spr_height(),
+            num_across: w.num_across(),
+            num_down:   w.num_down(),
+            total:      w.total(),
+            color_path: From::from(AsRef::as_ref(w.color_path().unwrap())),
+            depth_path: From::from(AsRef::as_ref(w.depth_path().unwrap())),
+        }
+    }
 }
 
 /// A sprite sheet.

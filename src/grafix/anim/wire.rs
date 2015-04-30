@@ -34,3 +34,54 @@ impl AnimInstance {
 
 }
 
+pub struct Anim {
+    inner: fb::Table,
+}
+
+impl Anim {
+    pub fn name(&self) -> Option<&fb::String> {
+        self.inner.get_ref(4)
+    }
+    pub fn sheet(&self) -> Option<&fb::String> {
+        self.inner.get_ref(6)
+    }
+    pub fn indices(&self) -> Option<&fb::Vector<u16>> {
+        self.inner.get_ref(8)
+    }
+}
+
+pub struct AnimBuilder<'x> {
+    fbb:   &'x mut fb::FlatBufferBuilder,
+    start: fb::UOffset,
+}
+
+impl<'x> AnimBuilder<'x> {
+    pub fn new(fbb: &'x mut fb::FlatBufferBuilder) -> AnimBuilder<'x> {
+        let start = fbb.start_table();
+        AnimBuilder {
+            fbb:   fbb,
+            start: start,
+        }
+    }
+
+    pub fn add_name(&mut self, name: fb::Offset<fb::String>) {
+        self.fbb.add_offset(4, name)
+    }
+
+    pub fn add_sheet(&mut self, sheet: fb::Offset<fb::String>) {
+        self.fbb.add_offset(6, sheet)
+    }
+
+    pub fn add_indices(&mut self, indices: fb::Offset<fb::Vector<u16>>) {
+        self.fbb.add_offset(8, indices)
+    }
+
+    pub fn finish(&mut self) -> fb::Offset<Anim> {
+        let o = fb::Offset::new(self.fbb.end_table(self.start, 3));
+        // self.fbb.required(o, 4);  // name
+        // self.fbb.required(o, 6);  // sheet
+        // self.fbb.required(o, 8);  // indices
+        o
+    }
+}
+

@@ -15,11 +15,16 @@
 // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#[allow(missing_docs)]
-pub mod wire;
+include "grafix/anim/wire.fbs";
+include "grafix/sprite/wire.fbs";
 
-mod common;
-pub use self::common::*;
+namespace asset.wire;
 
-#[cfg(feature = "client")] mod client;
-#[cfg(feature = "client")] pub use self::client::*;
+// The contents of the manifest are listed in dependency order, so that the dependencies of each
+// asset are guaranteed to be present before the asset itself is loaded.
+table AssetManifest {
+    sprite_sheets: [SpriteSheetDesc] (required);
+    anims:         [Anim]            (required);
+}
+
+root_type AssetManifest;
