@@ -18,8 +18,5 @@
 #[allow(missing_docs)]
 pub mod wire;
 
-mod common;
-pub use self::common::*;
-
 #[cfg(feature = "client")] mod client;
 #[cfg(feature = "client")] pub use self::client::*;
