@@ -18,8 +18,8 @@
 use std::collections::BTreeMap;
 use std::convert::AsRef;
 
-#[allow(missing_docs, dead_code)]
-mod wire;
+#[allow(missing_docs)]
+pub mod wire;
 
 #[cfg(feature = "client")] mod client;
 
@@ -29,7 +29,7 @@ mod wire;
 pub type AssetID = usize;
 
 /// Different types of game assets.
-#[derive(Clone)]
+#[derive(Clone,Debug)]
 pub enum Type {
     /// A Sprite Sheet, corresponding to a `sprite::Sheet` in the client.
     SpriteSheet,
@@ -88,5 +88,16 @@ impl ServerDb {
     /// Get the type of the asset referred to by a given name, if such an asset exists.
     pub fn type_by_name<S: AsRef<str>>(&self, name: &S) -> Option<Type> {
         self.id_by_name(name).and_then(|id| self.type_by_id(id))
+    }
+
+    /// Print out the name, id, and type of every item in the database.
+    pub fn dbg_print(&self) {
+        for (name, &id) in self.by_name.iter() {
+            if let Some(typ) = self.by_id.get(id) {
+                println!("Resource `{}' has id #{} and type `{:?}'.", *name, id, *typ);
+            } else {
+                println!("Resource `{}' refers to dangling id #{}", *name, id);
+            }
+        }
     }
 }
