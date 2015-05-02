@@ -52,8 +52,9 @@ pub mod time;
 /// The Entity Component System.
 pub mod entity;
 
-/// Systems which process entities, and tools for constructing them.
-pub mod system;
+// Not quite ready for this yet.
+// /// Systems which process entities, and tools for constructing them.
+// pub mod system;
 
 
 /// A RAII handle for the whole engine. Once this baby leaves scope, it's curtains.
