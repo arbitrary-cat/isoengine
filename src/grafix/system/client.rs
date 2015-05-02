@@ -15,25 +15,24 @@
 // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+use asset;
 use entity::client as entity;
 use grafix::sprite;
-use grafix::anim;
 use grafix::camera::Camera;
 use time;
 
 /// An implementation of `entity::System` which is responsible for rendering sprites.
 pub struct WorldRender<R: sprite::Renderer> {
-    sprite_db: sprite::Database,
-    anim_db:   anim::Database,
-    batcher:   sprite::Batcher,
-    renderer:  R,
-    camera:    Camera,
+    assets:   asset::AssetDb,
+    batcher:  sprite::Batcher,
+    renderer: R,
+    camera:   Camera,
 }
 
 impl<R: sprite::Renderer> entity::System for WorldRender<R> {
     /// Render last frame's entity batch.
     fn update(&mut self, _now: time::Duration) {
-        self.batcher.render_batch(&mut self.renderer, self.sprite_db.get_handle(), &self.camera);
+        self.batcher.render_batch(&mut self.renderer, self.assets.get_handle(), &self.camera);
     }
 
     /// Add this entity to the batch to be rendered.
@@ -43,7 +42,7 @@ impl<R: sprite::Renderer> entity::System for WorldRender<R> {
            world_render:   Some(ref mut ren),
            ..
        } = entity {
-            if let Some(req) = ren.anim.draw_at(self.anim_db.get_handle(), loc.bounds.center, now) {
+            if let Some(req) = ren.anim.draw_at(self.assets.get_handle(), loc.bounds.center, now) {
                 self.batcher.register(req)
             }
        }
@@ -54,13 +53,12 @@ impl <R: sprite::Renderer> WorldRender<R> {
     /// Create a new world rendering system with the given components.
     ///
     /// At the moment there is no way to update the database or camera. I'll work on that later.
-    pub fn new(spr: sprite::Database, anm: anim::Database, renderer: R, cam: Camera) -> WorldRender<R> {
+    pub fn new(assets: asset::AssetDb, renderer: R, camera: Camera) -> WorldRender<R> {
         WorldRender {
-            sprite_db: spr,
-            anim_db:   anm,
+            assets:    assets,
             batcher:   sprite::Batcher::new(),
             renderer:  renderer,
-            camera:    cam,
+            camera:    camera,
         }
     }
 

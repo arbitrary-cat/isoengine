@@ -21,12 +21,8 @@ use asset;
 use grafix;
 use grafix::sprite;
 use math;
-use system::db;
 use time;
 use units::*;
-
-/// A `SharedDb` of `anim::Anim`s.
-pub type Database = db::SharedDb<Anim>;
 
 /// An animation, which is just an ordered collection of sprites from a sprite-sheet.
 pub struct Anim {
@@ -49,10 +45,10 @@ impl Anim {
 
 impl Instance {
     /// Return a `sprite::DrawReq` for this instance rendered at a particular time.
-    pub fn draw_at(&self, db: db::Handle<Anim>, loc: math::Vec3<Meters>, t: time::Duration)
+    pub fn draw_at(&self, db: asset::Handle, loc: math::Vec3<Meters>, t: time::Duration)
         -> Option<sprite::DrawReq> {
 
-        let anim = if let Some(anim) = db.get_resource(self.anim_id) {
+        let anim = if let Some(anim) = db.get_anim(self.anim_id) {
             anim
         } else {
             return None

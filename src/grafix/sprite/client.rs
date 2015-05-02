@@ -15,8 +15,6 @@
 // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-use super::common::*;
-
 use std::convert::{AsRef, From};
 use std::mem;
 
@@ -24,12 +22,11 @@ use gl;
 use gl::types::*;
 use png;
 
+use asset::{self, AssetID};
+use grafix::camera::Camera;
 use grafix::opengl;
 use grafix;
-
-use grafix::camera::Camera;
 use math;
-use system::db;
 use units::*;
 
 // The maximum number of sprites that can be drawn on-screen at any given time.
@@ -465,15 +462,12 @@ impl Renderer for DebugRenderer {
     }
 }
 
-/// A `SharedDb` of `sprite::Sheet`s.
-pub type Database = db::SharedDb<Sheet>;
-
 /// A request for a sprite to be drawn. These are aggregated by the `Batcher` and turned into
 /// efficient OpenGL calls.
 #[derive(Copy,Clone)]
 pub struct DrawReq {
     /// The id of the sprite-sheet where this sprite resides.
-    pub sheet_id: SheetID,
+    pub sheet_id: AssetID,
 
     /// The index into that sheet of the sprite to be drawn.
     pub sprite_idx: usize,
@@ -538,13 +532,13 @@ impl Batcher {
 
     /// Render all `DrawReq`s which have been passed to this `Batcher`. In addition to causing them
     /// to be rendered, this will also leave the `Batcher` clear for the next frame.
-    pub fn render_batch<R: Renderer>(&mut self, r: &mut R, db: db::Handle<Sheet>, cam: &Camera) {
+    pub fn render_batch<R: Renderer>(&mut self, r: &mut R, db: asset::Handle, cam: &Camera) {
 
         let mut verts  = vec![];
         let mut groups = vec![];
 
         for (id, reqs) in self.by_sheet.iter().enumerate().filter(|&(_, v)| { !v.is_empty() }) {
-            let sheet = match db.get_resource(id) {
+            let sheet = match db.get_sprite_sheet(id) {
                 Some(sheet) => sheet,
                 None        => continue,
             };
