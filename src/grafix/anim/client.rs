@@ -15,10 +15,9 @@
 // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-use super::common::*;
-
 use asset;
-use grafix;
+use grafix::anim::wire::Anim as WireAnim;
+use grafix::anim;
 use grafix::sprite;
 use math;
 use time;
@@ -35,7 +34,7 @@ pub struct Anim {
 
 impl Anim {
     /// Convert from FlatBuffer representation.
-    pub fn from_wire<'x>(w: &grafix::anim::wire::Anim, h: asset::Handle<'x>) -> Anim {
+    pub fn from_wire<'x>(w: &WireAnim, h: asset::Handle<'x>) -> Anim {
         Anim {
             sheet_id: h.get_id(w.sheet().expect("sheet name in flatbuf")).expect("sheet id in DB"),
             indices:  w.indices().expect("indices in flatbuf").iter().collect(),
@@ -43,7 +42,7 @@ impl Anim {
     }
 }
 
-impl Instance {
+impl anim::Instance {
     /// Return a `sprite::DrawReq` for this instance rendered at a particular time.
     pub fn draw_at(&self, db: asset::Handle, loc: math::Vec3<Meters>, t: time::Duration)
         -> Option<sprite::DrawReq> {
