@@ -3,7 +3,7 @@
 use flatbuffers as fb;
 
 #[derive(Clone,Copy)]
-#[packed] pub struct AnimInstance {
+#[repr(packed)] #[repr(C)] pub struct AnimInstance {
     t_start: u64,
     duration: u64,
     id: u32,

@@ -3,7 +3,7 @@
 use flatbuffers as fb;
 
 #[derive(Clone,Copy)]
-#[packed] pub struct BoundingCube {
+#[repr(packed)] #[repr(C)] pub struct BoundingCube {
     center_x: f32,
     center_y: f32,
     center_z: f32,
@@ -31,7 +31,7 @@ impl BoundingCube {
 }
 
 #[derive(Clone,Copy)]
-#[packed] pub struct WorldLocation {
+#[repr(packed)] #[repr(C)] pub struct WorldLocation {
     bounds: BoundingCube,
 }
 
@@ -47,7 +47,7 @@ impl WorldLocation {
 }
 
 #[derive(Clone,Copy)]
-#[packed] pub struct WorldRender {
+#[repr(packed)] #[repr(C)] pub struct WorldRender {
     anim: ::grafix::anim::wire::AnimInstance,
 }
 
