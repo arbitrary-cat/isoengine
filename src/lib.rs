@@ -17,6 +17,8 @@
 
 #![warn(missing_docs)]
 
+//! A 2D Isometric Game Engine.
+
 #[cfg(feature = "client")] extern crate gl;
 #[cfg(feature = "client")] extern crate png;
 #[cfg(feature = "client")] extern crate sdl2;
@@ -53,35 +55,6 @@ pub mod entity;
 // Not quite ready for this yet.
 // /// Systems which process entities, and tools for constructing them.
 // pub mod system;
-
-
-/// A RAII handle for the whole engine. Once this baby leaves scope, it's curtains.
-///
-/// ...I'm tired, okay?
-#[allow(dead_code)]
-pub struct Context {
-    gfx: opengl::Context,
-    sdl: sdl2::Sdl,
-}
-
-impl Context {
-    /// Create a new isoengine context. This will create a window and an OpenGL context, as well as
-    /// initialize all SDL subsystems.
-    pub fn new(title: &str, x_res: i32, y_res: i32) -> Result<Context, String> {
-        let sdl = try!(sdl2::init(sdl2::INIT_EVERYTHING));
-        let gfx = try!(opengl::Context::new(title, x_res, y_res));
-
-        Ok(Context { sdl: sdl, gfx: gfx })
-    }
-
-    /// Swap OpenGL buffers, drawing the frame to the screen.
-    pub fn draw_frame(&self) {
-        self.gfx.draw_frame();
-    }
-
-    /// A debug method to get the sdl.
-    pub fn dbg_get_sdl(&self) -> &sdl2::Sdl { &self.sdl }
-}
 
 /// Code which is specific to game clients (as opposed to servers).
 #[cfg(feature = "client")] pub mod client;

@@ -40,8 +40,6 @@ impl Context {
         self.gfx.draw_frame();
     }
 
-    /// A debug method to get the sdl. Really this is to work around Ubuntu fading the fucking
-    /// window when I'm not polling for events. Yes, it's very helpful when you make it difficult
-    /// for me to see what's going on in a window that "isn't responding". Thanks Ubuntu.
+    /// A debug method to get the sdl.
     pub fn dbg_get_sdl(&self) -> &sdl2::Sdl { &self.sdl }
 }
